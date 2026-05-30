@@ -72,9 +72,9 @@ The app looks for models in this order:
 1. downloaded models in `~/Library/Application Support/Transcriber-LP/models`
 2. bundled models in the app/vendor resources
 
-The gears Settings panel can download supported `whisper.cpp` models into the user models directory. The same panel shows installed or bundled models and lets you select the model used for transcription.
+Use `Settings > Model downloads...` to download supported `whisper.cpp` models into the user models directory. The Settings dialog also shows installed or bundled models.
 
-If no model is installed, the app automatically asks whether to download the Base model. The download is saved outside the app bundle and accepted only after checksum verification.
+The main panel shows only `Current Model`. If no model is installed, it shows `click here to download a model`; clicking it opens Settings. Downloads are saved outside the app bundle and accepted only after checksum verification.
 
 Only models with a checksum in `app/core/model_manager.py` are enabled for in-app download. Models without a checksum must be installed manually after their provenance is verified.
 

@@ -2,7 +2,7 @@
 
 Transcriber-LP can use local `whisper.cpp` model files such as `ggml-base.bin`. Model files are not committed to this repository and are not bundled by default.
 
-Before distributing a model inside a packaged app, record the exact provenance and redistribution terms below. The default app flow downloads the Base model at runtime when no model is installed, then verifies it by checksum before use.
+Before distributing a model inside a packaged app, record the exact provenance and redistribution terms below. The default app flow lets users open Settings from the `Current Model` placeholder when no model is installed, then verifies downloaded models by checksum before use.
 
 ## Required Release Information
 
@@ -20,13 +20,13 @@ Before distributing a model inside a packaged app, record the exact provenance a
 
 The app can download model files from the `ggerganov/whisper.cpp` Hugging Face repository. Those files are derived from OpenAI Whisper models and converted for use by `whisper.cpp`.
 
-Built-in downloads are enabled only for models that have a checksum in `app/core/model_manager.py`; models without a checksum must be installed manually after provenance has been verified. The default automatic download target is `ggml-base.bin`.
+Built-in downloads are enabled only for models that have a checksum in `app/core/model_manager.py`; models without a checksum must be installed manually after provenance has been verified. The default first-run placeholder opens Settings, where `ggml-base.bin` is one of the checksum-verified download options.
 
 Do not redistribute a model file until its exact license and provenance have been verified for the specific artifact being shipped.
 
 ## Current Local Smoke-Test Model
 
-This model is not committed to the repository or bundled by default. It can be downloaded by the app at runtime, and it was also used to validate a local macOS package.
+This model is not committed to the repository or bundled by default. It can be downloaded by the app from Settings at runtime, and it was also used to validate a local macOS package.
 
 - Model filename: `ggml-base.bin`
 - Upstream model owner: OpenAI Whisper

@@ -1,10 +1,10 @@
 # Transcriber-LP
 
 [![CI](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml/badge.svg)](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.4.8-blue)
+![Version](https://img.shields.io/badge/version-0.4.9-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Current version: `0.4.8`
+Current version: `0.4.9`
 
 A local-first macOS transcription app built with PySide6, PyInstaller, FFmpeg, and `whisper.cpp`.
 
@@ -12,7 +12,7 @@ A local-first macOS transcription app built with PySide6, PyInstaller, FFmpeg, a
 
 - Offline transcription workflow with no hosted backend or user media upload.
 - Native desktop UI with drag and drop, batch import, unified Settings dropdowns, language controls, output format selection, media preview, quick transcript editing, theme switching, progress, cancellation, and help dialogs.
-- Local model management with automatic checksum-gated download when no model is installed.
+- Local model management with checksum-gated downloads from the Settings dialog.
 - Automated Python syntax checks and unit tests through GitHub Actions.
 - macOS Apple Silicon packaging flow with explicit third-party binary, model, and license provenance.
 
@@ -36,7 +36,7 @@ The repository intentionally does not commit runtime binaries, model weights, vi
 - optional timestamp CSV sidecar export independent of the selected transcript format
 - source language selection or auto-detect
 - translate to English or keep the source language
-- model downloads in the gears Settings panel with automatic checksum-gated Base model prompt when no model is installed
+- `Current Model` selector with a first-run download placeholder that opens model downloads in Settings
 - media preview player for reviewing the original source while correcting a transcript
 - quick transcript editor with overwrite confirmation before saving corrected `txt`, `srt`, and `vtt` files
 - batch status logging and output retrieval for completed queue items
@@ -81,7 +81,7 @@ For known-language recordings, selecting the language explicitly is recommended 
 - `requests`: Apache License 2.0.
 - Models (for example `ggml-base.bin`): may have separate licensing and distribution requirements.
 
-This repository avoids committing binary distributions and model weights. Runtime binaries are supplied from `third_party/macos/` before packaging, and should only be added when their licenses are compatible with the distribution plan. The default macOS bundle does not include model weights; the app prompts for a verified Base model download when no local model is present.
+This repository avoids committing binary distributions and model weights. Runtime binaries are supplied from `third_party/macos/` before packaging, and should only be added when their licenses are compatible with the distribution plan. The default macOS bundle does not include model weights; when no local model is present, `Current Model` shows a placeholder that opens Settings for a checksum-verified model download.
 
 Transcriber-LP source code is licensed under the MIT License. See `LICENSE`.
 Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_PROVENANCE.md`, `docs/RELEASE_COMPLIANCE.md`, and `docs/DISTRIBUTION_CHECKLIST.md`.
@@ -138,7 +138,7 @@ bash scripts/build_whisper_cli.sh
 
 `ffmpeg` and `ffprobe` must be supplied from a license-compatible macOS arm64 build and recorded in `docs/FFMPEG_BUILD.md`.
 
-The default build does not bundle model weights. Users are prompted to download the checksum-verified Base model on first run when no local model is installed. To create a bundle that includes `ggml-base.bin`, place it in `third_party/macos/models/` and build with:
+The default build does not bundle model weights. When no local model is installed, `Current Model` shows a placeholder that opens Settings for checksum-verified model downloads. To create a bundle that includes `ggml-base.bin`, place it in `third_party/macos/models/` and build with:
 
 ```bash
 TRANSCRIBER_LP_BUNDLE_MODEL=1 bash scripts/build_macos.sh

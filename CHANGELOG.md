@@ -2,6 +2,13 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.9 - 2026-05-31
+
+- Replaced the native dropdown popup frame with a frameless custom popup list.
+- Reduced the main Settings panel to the current model selector and transcription settings.
+- Moved installed-model listing and model downloads into a Settings dialog.
+- Added a first-run current-model placeholder that opens model downloads.
+
 ## 0.4.8 - 2026-05-31
 
 - Restored visible dropdown popup items after removing the wrong native popup frame layer.
