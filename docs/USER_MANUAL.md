@@ -39,6 +39,8 @@ If multiple queued files share the same base filename, batch output names includ
 
 `Save timestamps` creates an additional `.csv` sidecar with timestamp data while keeping the selected transcript format unchanged. This is useful when the main export is `txt` but review, audit, or downstream tooling still needs segment timing.
 
+The timestamp sidecar is saved next to the main transcript and uses the same base filename. Treat it like the transcript itself: it can contain timing information and recognized text from the source media.
+
 ## Review and Correct a Transcript
 
 When a media file is selected, the right side of the app loads it in the media preview player. Use `Play`, `Stop`, and the seek slider to review the source audio or video while checking the generated text.
@@ -83,6 +85,8 @@ Transcription files are saved to the folder selected when transcription starts. 
 ```text
 ~/Library/Application Support/Transcriber-LP/outputs
 ```
+
+Batch outputs, edited transcripts, subtitle files, and timestamp CSV sidecars remain local user files. They are not uploaded by the app and are not part of the packaged application bundle.
 
 ## Packaging Requirements
 

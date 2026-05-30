@@ -41,6 +41,12 @@ FFmpeg license obligations depend on the exact build. A build produced with `--e
 
 For a broadly redistributable non-GPL app release, use an LGPL-compatible FFmpeg build without GPL or nonfree configuration flags. If a GPL FFmpeg build is distributed, the combined distribution must satisfy GPL obligations.
 
+## Generated Output Policy
+
+Transcripts, subtitle files, edited transcript files, batch outputs, and timestamp `.csv` sidecars are generated user data. They are not third-party runtime components and do not add license obligations to the app by themselves.
+
+Do not include generated user outputs in public release artifacts unless they are intentional sample files with clear source provenance, consent, and privacy review. Timestamp CSV sidecars can contain timing and transcribed text, so handle them with the same privacy expectations as the main transcript files.
+
 ## Release Artifact Checklist
 
 Before publishing a `.app`, `.dmg`, or archive:
@@ -49,6 +55,7 @@ Before publishing a `.app`, `.dmg`, or archive:
 - include third-party license texts for bundled runtime components
 - include FFmpeg provenance and license classification
 - include model provenance only if a model is bundled
+- exclude generated user outputs such as transcripts, subtitles, batch results, and timestamp CSV sidecars unless they are approved sample assets
 - run `python -m unittest discover tests`
 - run `codesign --verify --deep --strict --verbose=2` on the exported app from a non-cloud-synced directory
 - sign and notarize if the artifact is intended for public macOS distribution

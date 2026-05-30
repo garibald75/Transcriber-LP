@@ -6,6 +6,7 @@ Transcriber-LP follows semantic versioning. The first tracked baseline starts at
 
 - Added an export setting to save timestamp data as a CSV sidecar independent of the selected transcript format.
 - Persisted the timestamp export preference in user settings.
+- Updated user, test, distribution, technical review, and compliance documentation for the 0.3.1 workflow.
 
 ## 0.3.0 - 2026-05-30
 
