@@ -6,7 +6,15 @@
 
 Current version: `0.1.0`
 
-Offline desktop transcription app for macOS, built with PySide6, PyInstaller, FFmpeg, and `whisper.cpp`.
+A local-first macOS transcription app built with PySide6, PyInstaller, FFmpeg, and `whisper.cpp`.
+
+## Project highlights
+
+- Offline transcription workflow with no hosted backend or user media upload.
+- Native desktop UI with drag and drop, language controls, output format selection, theme switching, progress, cancellation, and help dialogs.
+- Local model management with checksum validation for supported downloads.
+- Automated Python syntax checks and unit tests through GitHub Actions.
+- macOS Apple Silicon packaging flow with explicit third-party binary, model, and license provenance.
 
 ## What this project is
 
@@ -73,6 +81,7 @@ Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_P
 - `docs/USER_MANUAL.md` end-user manual
 - `docs/THIRD_PARTY_NOTICE.md` open-source owners, licenses, and redistribution policy
 - `docs/DISTRIBUTION_CHECKLIST.md` release readiness checklist
+- `docs/TECHNICAL_REVIEW.md` implementation notes for technical review
 - `scripts/` packaging and helper scripts
 - `third_party/macos/` local packaging inputs; only `.gitkeep` is tracked
 - `.github/workflows/` CI pipeline
