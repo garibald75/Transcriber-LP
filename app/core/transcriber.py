@@ -42,23 +42,7 @@ class Transcriber:
         self._cancel_requested = True
         proc = self._current_process
         if proc and proc.poll() is None:
-            try:
-                if log_cb:
-                    log_cb("Cancellation requested. Stopping current process...")
-                proc.terminate()
-            except Exception as exc:
-                if log_cb:
-                    log_cb(f"Terminate failed: {exc}")
-            try:
-                proc.wait(timeout=3)
-            except Exception:
-                try:
-                    if log_cb:
-                        log_cb("Force killing current process...")
-                    proc.kill()
-                except Exception as exc:
-                    if log_cb:
-                        log_cb(f"Kill failed: {exc}")
+            self._terminate_process_group(proc, log_cb, "current")
 
     def transcribe(self, options: TranscriptionOptions, log_cb=None) -> Path:
         self._cancel_requested = False
@@ -156,7 +140,7 @@ class Transcriber:
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
             env=env,
@@ -164,24 +148,14 @@ class Transcriber:
         )
         self._current_process = process
 
-        stdout_lines: list[str] = []
-        stderr_lines: list[str] = []
+        output_lines: list[str] = []
 
         try:
             if process.stdout is not None:
                 for line in process.stdout:
                     line = line.rstrip()
-                    stdout_lines.append(line)
-                    self._log(log_cb, f"[{label} STDOUT] {line}")
-                    if self._cancel_requested:
-                        self._terminate_process_group(process, log_cb, label)
-                        raise RuntimeError("Operation cancelled by user.")
-
-            if process.stderr is not None:
-                for line in process.stderr:
-                    line = line.rstrip()
-                    stderr_lines.append(line)
-                    self._log(log_cb, f"[{label} STDERR] {line}")
+                    output_lines.append(line)
+                    self._log(log_cb, f"[{label}] {line}")
                     if self._cancel_requested:
                         self._terminate_process_group(process, log_cb, label)
                         raise RuntimeError("Operation cancelled by user.")
@@ -196,8 +170,7 @@ class Transcriber:
                 raise RuntimeError(
                     f"{label} failed with exit code {rc}\n"
                     f"CMD: {' '.join(cmd)}\n"
-                    f"STDOUT:\n" + "\n".join(stdout_lines[-300:]) + "\n\n"
-                    f"STDERR:\n" + "\n".join(stderr_lines[-300:])
+                    f"OUTPUT:\n" + "\n".join(output_lines[-300:])
                 )
         finally:
             self._current_process = None

@@ -55,6 +55,7 @@ third_party/macos/models/ggml-base.bin
 ```
 
 Only distribute third-party binaries and models when their licenses allow it.
+Complete `docs/DISTRIBUTION_CHECKLIST.md` before publishing a release.
 
 ## Open-Source Licenses and Owners
 
