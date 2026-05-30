@@ -6,6 +6,7 @@ from pathlib import Path
 from PySide6.QtCore import QSettings, Qt, QThreadPool, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QFileDialog,
     QFormLayout,
@@ -173,6 +174,7 @@ class MainWindow(QMainWindow):
         self.settings = QSettings("Transcriber-LP", "Transcriber-LP")
         saved_theme = self.settings.value("appearance/theme", "light")
         self.theme_name = saved_theme if saved_theme in THEME_PALETTES else "light"
+        self.log_auto_scroll = self._settings_bool("log/auto_scroll", True)
 
         self._build_ui()
         self.refresh_models()
@@ -371,9 +373,18 @@ class MainWindow(QMainWindow):
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(14, 0, 0, 0)
         right_layout.setSpacing(8)
+        log_header = QHBoxLayout()
+        log_header.setContentsMargins(0, 0, 0, 0)
         log_title = QLabel("Log")
         log_title.setObjectName("sectionTitle")
-        right_layout.addWidget(log_title)
+        log_header.addWidget(log_title)
+        log_header.addStretch()
+        self.log_auto_scroll_checkbox = QCheckBox("Auto-scroll")
+        self.log_auto_scroll_checkbox.setChecked(self.log_auto_scroll)
+        self.log_auto_scroll_checkbox.setToolTip("Keep the log pinned to the newest line.")
+        self.log_auto_scroll_checkbox.toggled.connect(self.set_log_auto_scroll)
+        log_header.addWidget(self.log_auto_scroll_checkbox)
+        right_layout.addLayout(log_header)
         self.log = QPlainTextEdit()
         self.log.setObjectName("logPanel")
         self.log.setReadOnly(True)
@@ -388,7 +399,7 @@ class MainWindow(QMainWindow):
     def set_selected_file(self, path: Path) -> None:
         self.selected_file = path
         self.file_label.setText(str(path))
-        self.log.appendPlainText(f"Selected: {path}")
+        self.append_log(f"Selected: {path}")
 
     def browse_file(self) -> None:
         file_path, _ = QFileDialog.getOpenFileName(
@@ -441,7 +452,20 @@ class MainWindow(QMainWindow):
             self.download_model(model.key)
 
     def append_log(self, text: str) -> None:
+        scroll_bar = self.log.verticalScrollBar()
+        previous_scroll = scroll_bar.value()
         self.log.appendPlainText(text)
+        if self.log_auto_scroll:
+            scroll_bar.setValue(scroll_bar.maximum())
+        else:
+            scroll_bar.setValue(previous_scroll)
+
+    def set_log_auto_scroll(self, enabled: bool) -> None:
+        self.log_auto_scroll = enabled
+        self.settings.setValue("log/auto_scroll", enabled)
+        if enabled:
+            scroll_bar = self.log.verticalScrollBar()
+            scroll_bar.setValue(scroll_bar.maximum())
 
     def start_transcription(self) -> None:
         if not self.selected_file:
@@ -574,16 +598,16 @@ class MainWindow(QMainWindow):
 
 
     def stop_transcription(self):
-        self.log.appendPlainText("Stop requested by user...")
+        self.append_log("Stop requested by user...")
         worker = getattr(self, "current_worker", None)
         if worker is not None:
             try:
                 worker.cancel()
             except Exception as exc:
-                self.log.appendPlainText(f"Stop failed: {exc}")
+                self.append_log(f"Stop failed: {exc}")
 
     def on_transcription_cancelled(self):
-        self.log.appendPlainText("Transcription cancelled.")
+        self.append_log("Transcription cancelled.")
         self.progress.setRange(0, 1)
         self.progress.setValue(0)
         self.progress_label.setText("Cancelled")
@@ -626,6 +650,12 @@ class MainWindow(QMainWindow):
                 "Versioning starts at 0.1.0 for the first tracked public-ready baseline."
             ),
         )
+
+    def _settings_bool(self, key: str, default: bool) -> bool:
+        value = self.settings.value(key, default)
+        if isinstance(value, bool):
+            return value
+        return str(value).strip().lower() not in {"0", "false", "no", "off"}
 
     def _set_download_controls_enabled(self, enabled: bool) -> None:
         for button in getattr(self, "download_buttons", []):
@@ -880,6 +910,37 @@ class MainWindow(QMainWindow):
                                 f"selection-color: {c['selection_text']};",
                                 f"border: 1px solid {c['input_border']};",
                                 "outline: 0;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QCheckBox",
+                        "\n".join(
+                            [
+                                f"color: {c['field_label']};",
+                                "font-weight: 600;",
+                                "spacing: 7px;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QCheckBox::indicator",
+                        "\n".join(
+                            [
+                                "width: 14px;",
+                                "height: 14px;",
+                                f"border: 1px solid {c['input_border']};",
+                                "border-radius: 4px;",
+                                f"background: {c['input_bg']};",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QCheckBox::indicator:checked",
+                        "\n".join(
+                            [
+                                f"background: {c['primary_bg']};",
+                                f"border-color: {c['primary_border']};",
                             ]
                         ),
                     ),
