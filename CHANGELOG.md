@@ -2,6 +2,10 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.10 - 2026-05-31
+
+- Replaced horizontal scrolling in the model Settings list with ellipsized rows and full-name tooltips.
+
 ## 0.4.9 - 2026-05-31
 
 - Replaced the native dropdown popup frame with a frameless custom popup list.
