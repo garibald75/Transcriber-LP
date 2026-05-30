@@ -1,6 +1,8 @@
-#  Transcriber-LP
+# Transcriber-LP
 
-Offline desktop app for local video/audio transcription with a bundled engine, bundled FFmpeg, a default bundled Whisper model, and optional model updates stored outside the app bundle.
+Current version: `0.1.0`
+
+Offline desktop transcription app for macOS, built with PySide6 and `whisper.cpp`.
 
 ## What this project is
 
@@ -8,104 +10,127 @@ Offline desktop app for local video/audio transcription with a bundled engine, b
 - Packaging: PyInstaller
 - Speech engine: `whisper.cpp` CLI
 - Audio extraction: `ffmpeg`
-- Default model: bundled in the app
-- Updated models: stored in `Application Support/Transcriber-LP/models`
-- No server required for transcription
+- Default bundled model: `ggml-base.bin`
+- Optional downloadable models stored outside the app bundle
+- No server required, offline-capable transcription
 
-## Current target
+## Features
 
-This repository is designed for macOS on both Intel and Apple Silicon. The source code is portable, but the provided packaging scripts focus on macOS.
+- drag & drop media input
+- file browser selection
+- output formats: `txt`, `srt`, `vtt`
+- choose source language or auto-detect
+- translate to English or keep original language
+- model manager with downloadable models
+- stop/cancel transcription in progress
+- runtime help manual and tooltips
+- GitHub CI for syntax + import validation
 
-## Project structure
+## Versioning
 
-- `app/` application code
-- `scripts/` build and vendor preparation scripts
-- `third_party/macos/` place built binaries here before packaging
-- `build/` temporary build outputs
+Transcriber-LP uses semantic versioning starting at `0.1.0`.
 
-## Runtime binary layout expected before packaging
+- `0.x` releases are early public-ready builds where UI, packaging, and workflow details may still change.
+- Patch releases fix bugs or documentation without changing behavior.
+- Minor releases add user-visible features or packaging improvements.
 
-Put these files here:
+The source of truth is `app/version.py`. macOS bundle metadata is read from that file during PyInstaller builds.
+
+## Screenshot
+
+![Transcriber-LP UI](docs/transcriber-lp-screenshot.svg)
+
+## Third-party components and licenses
+
+- `ffmpeg` / `ffprobe`: LGPL/GPL-licensed media toolkit. Verify the upstream build license before bundling. See https://ffmpeg.org/legal.html
+- `whisper.cpp` / `whisper-cli`: upstream project by Georgi Gerganov, typically licensed under MIT. See https://github.com/ggerganov/whisper.cpp
+- `PySide6`: Qt for Python, licensed under LGPL. See https://doc.qt.io/qtforpython/
+- `requests`: Apache License 2.0.
+- Models (for example `ggml-base.bin`): may have separate licensing and distribution requirements.
+
+This repository avoids committing binary distributions and model weights. Runtime binaries are supplied from `third_party/macos/` before packaging, and should only be added when their licenses are compatible with your distribution plan.
+
+No project source license file is currently declared in this repository. Add a top-level `LICENSE` before publishing or accepting external contributions.
+
+## Repository structure
+
+- `app/` application source code
+- `app/assets/` UI and icon assets (including a new SVG app icon)
+- `tests/` unit tests and import checks
+- `docs/USER_MANUAL.md` end-user manual
+- `docs/THIRD_PARTY_NOTICE.md` open-source owners, licenses, and redistribution policy
+- `scripts/` packaging and helper scripts
+- `third_party/macos/` required runtime binaries before packaging
+- `.github/workflows/` CI pipeline
+
+## Quick start
+
+1. Create a Python virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+2. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Run the app:
+
+```bash
+python -m app.main
+```
+
+## macOS M1 build
+
+Ensure these files are present before building:
 
 - `third_party/macos/ffmpeg`
 - `third_party/macos/ffprobe`
 - `third_party/macos/whisper-cli`
 - `third_party/macos/models/ggml-base.bin`
 
-## Build whisper.cpp CLI
-
-Example:
-
-```bash
-cd /tmp
-git clone https://github.com/ggml-org/whisper.cpp.git
-cd whisper.cpp
-cmake -B build
-cmake --build build --config Release -j
-```
-
-Then copy:
-
-```bash
-cp build/bin/whisper-cli /path/to/video_transcriber_app/third_party/macos/
-```
-
-## Get the default bundled model
-
-The repo includes a helper script:
-
-```bash
-bash scripts/download_default_model.sh
-```
-
-It downloads `ggml-base.bin` into `third_party/macos/models/`.
-
-## FFmpeg
-
-Place redistributable `ffmpeg` and `ffprobe` binaries into `third_party/macos/`.
-
-## Dev run
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python -m app.main
-```
-
-## Build macOS app bundle
+Then run:
 
 ```bash
 bash scripts/build_macos.sh
 ```
 
-The output goes to `dist/Transcriber-LP.app`.
+The application bundle is created in `dist/Transcriber-LP.app`.
 
-## Universal2 build note
+## Intel / universal build
 
-To build a single macOS app bundle that runs on Intel and Apple Silicon, use a universal2 Python environment and universal2-compatible dependencies and binaries. The provided build script passes PyInstaller's macOS target architecture flag as `universal2`.
+The current packaging is targeted for Apple Silicon (`arm64`).
+For Intel support, build with a universal2 Python environment and compatible binaries, or use a separate Intel-specific build environment.
 
-## Updateable models behavior
+## Testing and CI
 
-At runtime the app looks for models in this order:
+A GitHub Actions workflow is provided in `.github/workflows/ci.yml`.
+The CI pipeline performs:
 
-1. user-downloaded models in `Application Support/Transcriber-LP/models`
-2. bundled default model inside the app resources
+- checkout repository
+- install Python dependencies
+- compile all Python sources under `app/`
+- run unit tests in `tests/`
 
-So the app works immediately offline, but can later download a newer or larger model without rebuilding the app.
+Run tests locally with:
 
-## What works in the UI
+```bash
+python -m unittest discover tests
+```
 
-- Drag and drop video/audio files
-- Choose language hint
-- Choose output format (`txt`, `srt`, `vtt`)
-- Choose active model
-- Download additional models
-- Start local transcription
-- Open output folder
+## Runtime paths
 
-## Limits
+- downloaded models: `~/Library/Application Support/Transcriber-LP/models`
+- outputs: `~/Library/Application Support/Transcriber-LP/outputs`
+- temporary files: `~/Library/Application Support/Transcriber-LP/tmp`
 
-- Progress is coarse because `whisper.cpp` CLI is invoked as a subprocess
-- Packaging for Windows/Linux is not included in these scripts yet
-- Final notarization/signing is not included
+## Notes
+
+- The app currently targets macOS packaging and does not include Windows/Linux installers.
+- The repo is configured to keep binary artifacts out of version control.
+- The UI includes tooltips and an inline help manual for a better user experience.
+- The app includes `Help > Open-source licenses` and `docs/THIRD_PARTY_NOTICE.md` to cite third-party owners and licenses.

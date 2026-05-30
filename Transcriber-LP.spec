@@ -6,13 +6,13 @@ from pathlib import Path
 root = Path.cwd()
 vendor = root / "third_party" / "macos"
 model_dir = vendor / "models"
+version = (root / "app" / "version.py").read_text().split('APP_VERSION = "')[1].split('"')[0]
 
 
 datas = [
     (str(vendor / "ffmpeg"), "vendor"),
-    (str(vendor / "ffprobe"), "vendor"),
     (str(vendor / "whisper-cli"), "vendor"),
-    (str(model_dir), "vendor/models"),
+    (str(model_dir / "ggml-base.bin"), "vendor/models"),
 ]
 
 
@@ -47,6 +47,7 @@ exe = EXE(
     strip=False,
     upx=False,
     console=False,
+    target_arch='arm64',
 )
 
 coll = COLLECT(
@@ -64,4 +65,8 @@ app = BUNDLE(
     name='Transcriber-LP.app',
     icon=None,
     bundle_identifier='com.local.transcriberlp',
+    info_plist={
+        'CFBundleShortVersionString': version,
+        'CFBundleVersion': version,
+    },
 )
