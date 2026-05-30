@@ -2,6 +2,10 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.0 - 2026-05-30
+
+- Moved model download controls into the Settings panel alongside model selection.
+
 ## 0.3.2 - 2026-05-30
 
 - Added an overwrite confirmation dialog before saving edited transcript changes back to an existing file.

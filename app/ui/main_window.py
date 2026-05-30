@@ -360,7 +360,7 @@ class MainWindow(QMainWindow):
 
         left_layout.addWidget(batch_box, stretch=2)
 
-        settings_box = QGroupBox("Transcription")
+        settings_box = QGroupBox("Settings")
         settings_layout = QFormLayout(settings_box)
         settings_layout.setContentsMargins(16, 20, 16, 14)
         settings_layout.setHorizontalSpacing(14)
@@ -407,43 +407,17 @@ class MainWindow(QMainWindow):
         settings_layout.addRow("Model", self.model_combo)
         settings_layout.addRow("Source language", self.source_language_combo)
         settings_layout.addRow("Translation target", self.target_language_combo)
-
-        left_layout.addWidget(settings_box)
-
-        button_row = QHBoxLayout()
-        button_row.setSpacing(8)
-        self.transcribe_btn = QPushButton("Transcribe")
-        self.transcribe_btn.setProperty("role", "primary")
-        self.transcribe_btn.clicked.connect(self.start_transcription)
-        self.transcribe_btn.setToolTip("Start the transcription process for the selected file.")
-        button_row.addWidget(self.transcribe_btn)
-
-        self.stop_btn = QPushButton("Stop")
-        self.stop_btn.setProperty("role", "danger")
-        self.stop_btn.clicked.connect(self.stop_transcription)
-        self.stop_btn.setEnabled(False)
-        self.stop_btn.setToolTip("Cancel the currently running transcription.")
-        button_row.addWidget(self.stop_btn)
-
-        self.open_output_btn = QPushButton("Open outputs")
-        self.open_output_btn.setProperty("role", "secondary")
-        self.open_output_btn.clicked.connect(self.open_outputs)
-        self.open_output_btn.setToolTip("Open the folder where transcription outputs are saved.")
-        button_row.addWidget(self.open_output_btn)
-        left_layout.addLayout(button_row)
-
-        model_box = QGroupBox("Model Manager")
-        model_layout = QVBoxLayout(model_box)
-        model_layout.setContentsMargins(16, 20, 16, 14)
-        model_layout.setSpacing(8)
         self.model_list = QListWidget()
         self.model_list.setMinimumHeight(64)
         self.model_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.model_list.setToolTip("Installed and bundled models available for transcription.")
-        model_layout.addWidget(self.model_list, stretch=1)
+        settings_layout.addRow("Installed models", self.model_list)
 
+        downloads_widget = QWidget()
         dl_row = QHBoxLayout()
+        dl_row.setContentsMargins(0, 0, 0, 0)
         dl_row.setSpacing(8)
+        downloads_widget.setLayout(dl_row)
         self.download_base_btn = QPushButton("Download Base")
         self.download_base_btn.setProperty("role", "secondary")
         self.download_base_btn.clicked.connect(lambda: self.download_model("base"))
@@ -474,8 +448,31 @@ class MainWindow(QMainWindow):
             self.download_large_btn,
         ]
 
-        model_layout.addLayout(dl_row)
-        left_layout.addWidget(model_box)
+        settings_layout.addRow("Model downloads", downloads_widget)
+
+        left_layout.addWidget(settings_box)
+
+        button_row = QHBoxLayout()
+        button_row.setSpacing(8)
+        self.transcribe_btn = QPushButton("Transcribe")
+        self.transcribe_btn.setProperty("role", "primary")
+        self.transcribe_btn.clicked.connect(self.start_transcription)
+        self.transcribe_btn.setToolTip("Start the transcription process for the selected file.")
+        button_row.addWidget(self.transcribe_btn)
+
+        self.stop_btn = QPushButton("Stop")
+        self.stop_btn.setProperty("role", "danger")
+        self.stop_btn.clicked.connect(self.stop_transcription)
+        self.stop_btn.setEnabled(False)
+        self.stop_btn.setToolTip("Cancel the currently running transcription.")
+        button_row.addWidget(self.stop_btn)
+
+        self.open_output_btn = QPushButton("Open outputs")
+        self.open_output_btn.setProperty("role", "secondary")
+        self.open_output_btn.clicked.connect(self.open_outputs)
+        self.open_output_btn.setToolTip("Open the folder where transcription outputs are saved.")
+        button_row.addWidget(self.open_output_btn)
+        left_layout.addLayout(button_row)
 
         self.progress = QProgressBar()
         self.progress.setRange(0, 1)
@@ -1193,7 +1190,7 @@ class MainWindow(QMainWindow):
             "Transcriber-LP Manual:\n\n"
             "1) Seleziona un file audio o video con Browse o trascinalo nella finestra.\n"
             "2) Scegli il formato di uscita: txt, srt o vtt.\n"
-            "3) Seleziona un modello disponibile. I modelli possono essere aggiornati dal pannello Model Manager.\n"
+            "3) Seleziona un modello disponibile. I download dei modelli sono nel pannello Settings.\n"
             "4) Opzionalmente imposta la lingua sorgente o lascia Auto-detect per la rilevazione automatica.\n"
             "5) Scegli se mantenere la lingua originale o tradurre in inglese.\n"
             "6) Abilita Save timestamps se vuoi anche un file CSV con i timestamp.\n"
