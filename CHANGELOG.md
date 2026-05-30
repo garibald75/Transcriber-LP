@@ -2,6 +2,10 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.6 - 2026-05-30
+
+- Simplified the macOS app icon to a microphone with a compact wave mark.
+
 ## 0.4.5 - 2026-05-30
 
 - Centered Settings form labels vertically against their controls.
