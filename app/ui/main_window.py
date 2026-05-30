@@ -1,5 +1,4 @@
 from __future__ import annotations
-import sys
 import time
 
 from pathlib import Path
@@ -13,6 +12,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QFormLayout,
+    QFrame,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -189,18 +189,6 @@ DESIGN_TOKENS = {
 }
 
 
-def _asset_url(name: str) -> str:
-    bundle_root = Path(getattr(sys, "_MEIPASS", ""))
-    candidates = [
-        bundle_root / "assets" / name,
-        Path(__file__).resolve().parents[1] / "assets" / name,
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return QUrl.fromLocalFile(str(candidate)).toString()
-    return QUrl.fromLocalFile(str(candidates[-1])).toString()
-
-
 class ComboPopupHoverFilter(QObject):
     def __init__(self, view) -> None:
         super().__init__(view)
@@ -258,6 +246,22 @@ class ComboItemDelegate(QStyledItemDelegate):
             opt.palette.setColor(QPalette.ColorRole.Text, QColor(self.text))
 
         super().paint(painter, opt, index)
+
+
+class DesignComboBox(QComboBox):
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+
+        color = QColor(str(self.property("chevronColor") or "#1cc79a"))
+        rect = self.rect()
+        center_y = rect.center().y()
+        start_x = rect.right() - 24
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(QPen(color, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        painter.drawLine(start_x, center_y - 2, start_x + 5, center_y + 3)
+        painter.drawLine(start_x + 5, center_y + 3, start_x + 10, center_y - 2)
 
 
 class XCheckBox(QCheckBox):
@@ -456,9 +460,10 @@ class MainWindow(QMainWindow):
         settings_layout.setContentsMargins(16, 20, 16, 14)
         settings_layout.setHorizontalSpacing(14)
         settings_layout.setVerticalSpacing(10)
+        settings_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         settings_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
 
-        self.output_combo = QComboBox()
+        self.output_combo = DesignComboBox()
         self.output_combo.addItems(["txt", "srt", "vtt"])
         self.output_combo.setToolTip("Choose the output subtitle/text format for the transcription.")
         settings_layout.addRow("Output format", self.output_combo)
@@ -472,9 +477,9 @@ class MainWindow(QMainWindow):
         )
         settings_layout.addRow("Timestamp export", self.save_timestamps_checkbox)
 
-        self.model_combo = QComboBox()
+        self.model_combo = DesignComboBox()
         self.model_combo.setToolTip("Select the transcription model. Models are loaded from the app bundle or downloaded models.")
-        self.source_language_combo = QComboBox()
+        self.source_language_combo = DesignComboBox()
         self.source_language_combo.addItem("Auto-detect", "auto")
         self.source_language_combo.addItem("Italian", "it")
         self.source_language_combo.addItem("English", "en")
@@ -483,7 +488,7 @@ class MainWindow(QMainWindow):
         self.source_language_combo.addItem("French", "fr")
         self.source_language_combo.addItem("German", "de")
         self.source_language_combo.setToolTip("Force the source language for transcription, or use auto-detection.")
-        self.target_language_combo = QComboBox()
+        self.target_language_combo = DesignComboBox()
         self.target_language_combo.addItem("Keep original language", "as_source")
         self.target_language_combo.addItem("Translate to English", "english")
         self.target_language_combo.setToolTip("Choose whether to keep the original language or translate the transcript into English.")
@@ -1343,6 +1348,8 @@ class MainWindow(QMainWindow):
         combo.view().setMouseTracking(True)
         combo.view().viewport().setMouseTracking(True)
         combo.view().viewport().setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        combo.view().setFrameShape(QFrame.Shape.NoFrame)
+        combo.view().setLineWidth(0)
         combo.view().setUniformItemSizes(True)
         combo.view().setMinimumWidth(control["combo_min_width"])
         combo.view().entered.connect(combo.view().setCurrentIndex)
@@ -1378,6 +1385,8 @@ class MainWindow(QMainWindow):
 
     def _sync_combo_item_delegates(self, colors: dict[str, str]) -> None:
         for combo in getattr(self, "styled_combos", []):
+            combo.setProperty("chevronColor", colors["arrow"])
+            combo.update()
             delegate = combo.view().itemDelegate()
             if isinstance(delegate, ComboItemDelegate):
                 delegate.set_colors(
@@ -1391,7 +1400,6 @@ class MainWindow(QMainWindow):
         c = THEME_PALETTES[self.theme_name]
         radius = DESIGN_TOKENS["radius"]
         control = DESIGN_TOKENS["control"]
-        combo_arrow = _asset_url("chevron_down.svg")
         self._sync_combo_item_delegates(c)
 
         def block(selector: str, body: str) -> str:
@@ -1643,9 +1651,9 @@ class MainWindow(QMainWindow):
                         "QComboBox::down-arrow",
                         "\n".join(
                             [
-                                f'image: url("{combo_arrow}");',
-                                "width: 12px;",
-                                "height: 8px;",
+                                "image: none;",
+                                "width: 0;",
+                                "height: 0;",
                                 "margin-right: 12px;",
                             ]
                         ),

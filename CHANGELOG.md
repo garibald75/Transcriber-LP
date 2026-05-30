@@ -2,6 +2,12 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.5 - 2026-05-30
+
+- Centered Settings form labels vertically against their controls.
+- Drew dropdown chevrons directly in the combo box widget so arrows are always visible.
+- Removed the popup view frame around open dropdown menus.
+
 ## 0.4.4 - 2026-05-30
 
 - Removed the default gray border from Settings dropdowns.
