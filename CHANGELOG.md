@@ -2,6 +2,10 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.1 - 2026-05-30
+
+- Added a gears icon to the Settings panel that now contains model management controls.
+
 ## 0.4.0 - 2026-05-30
 
 - Moved model download controls into the Settings panel alongside model selection.

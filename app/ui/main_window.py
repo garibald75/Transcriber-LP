@@ -360,7 +360,7 @@ class MainWindow(QMainWindow):
 
         left_layout.addWidget(batch_box, stretch=2)
 
-        settings_box = QGroupBox("Settings")
+        settings_box = QGroupBox("⚙ Settings")
         settings_layout = QFormLayout(settings_box)
         settings_layout.setContentsMargins(16, 20, 16, 14)
         settings_layout.setHorizontalSpacing(14)
