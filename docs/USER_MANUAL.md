@@ -1,6 +1,6 @@
 # Transcriber-LP User Manual
 
-Current version: `0.1.0`
+Current version: `0.2.0`
 
 Versioning starts at `0.1.0` for the first tracked public-ready baseline. The source of truth is `app/version.py`.
 
@@ -25,6 +25,14 @@ For a packaged build, open `dist/Transcriber-LP.app`.
 7. Choose the output folder when prompted.
 
 Use `Stop` to cancel a running transcription.
+
+## Review and Correct a Transcript
+
+When a media file is selected, the right side of the app loads it in the media preview player. Use `Play`, `Stop`, and the seek slider to review the source audio or video while checking the generated text.
+
+When a transcription completes, the generated `txt`, `srt`, or `vtt` file opens automatically in the transcript editor. Correct the text directly and click `Save changes` to write the edits back to the same file.
+
+Use `Open transcript` to load an existing transcript manually.
 
 ## Language Selection
 

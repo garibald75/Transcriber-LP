@@ -5,6 +5,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QSettings, Qt, QThreadPool, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QPainter, QPen
+from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -20,6 +22,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QPlainTextEdit,
     QProgressBar,
+    QSlider,
     QSplitter,
     QVBoxLayout,
     QWidget,
@@ -202,6 +205,7 @@ class MainWindow(QMainWindow):
         self.model_manager = ModelManager()
         self.selected_file: Path | None = None
         self.current_worker = None
+        self.current_transcript_path: Path | None = None
         self.download_started_at = 0.0
         self.active_download_model_key: str | None = None
         self.auto_model_prompted = False
@@ -240,7 +244,7 @@ class MainWindow(QMainWindow):
         licenses_action = QAction("Open-source licenses", self)
         licenses_action.triggered.connect(self.show_open_source_notices)
         help_menu.addAction(licenses_action)
-        about_action = QAction("About Transcriber-LP", self)
+        about_action = QAction(f"About Transcriber-LP {APP_VERSION}", self)
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
 
@@ -417,6 +421,103 @@ class MainWindow(QMainWindow):
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(14, 0, 0, 0)
         right_layout.setSpacing(8)
+
+        review_splitter = QSplitter(Qt.Orientation.Vertical)
+        review_splitter.setObjectName("reviewSplitter")
+        right_layout.addWidget(review_splitter)
+
+        media_box = QGroupBox("Media Preview")
+        media_layout = QVBoxLayout(media_box)
+        media_layout.setContentsMargins(16, 20, 16, 14)
+        media_layout.setSpacing(8)
+        self.video_widget = QVideoWidget()
+        self.video_widget.setObjectName("videoPreview")
+        self.video_widget.setMinimumHeight(180)
+        media_layout.addWidget(self.video_widget)
+
+        player_row = QHBoxLayout()
+        player_row.setSpacing(8)
+        self.play_pause_btn = QPushButton("Play")
+        self.play_pause_btn.setProperty("role", "secondary")
+        self.play_pause_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+        self.play_pause_btn.setEnabled(False)
+        self.play_pause_btn.clicked.connect(self.toggle_playback)
+        self.play_pause_btn.setToolTip("Play or pause the selected source media.")
+        player_row.addWidget(self.play_pause_btn)
+
+        self.media_stop_btn = QPushButton("Stop")
+        self.media_stop_btn.setProperty("role", "secondary")
+        self.media_stop_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaStop))
+        self.media_stop_btn.setEnabled(False)
+        self.media_stop_btn.clicked.connect(self.stop_media)
+        self.media_stop_btn.setToolTip("Stop media playback.")
+        player_row.addWidget(self.media_stop_btn)
+
+        self.position_label = QLabel("00:00")
+        self.position_label.setObjectName("timeLabel")
+        player_row.addWidget(self.position_label)
+
+        self.media_slider = QSlider(Qt.Orientation.Horizontal)
+        self.media_slider.setEnabled(False)
+        self.media_slider.setRange(0, 0)
+        self.media_slider.sliderMoved.connect(self.seek_media)
+        self.media_slider.setToolTip("Seek through the selected source media.")
+        player_row.addWidget(self.media_slider, stretch=1)
+
+        self.duration_label = QLabel("00:00")
+        self.duration_label.setObjectName("timeLabel")
+        player_row.addWidget(self.duration_label)
+        media_layout.addLayout(player_row)
+        review_splitter.addWidget(media_box)
+
+        self.audio_output = QAudioOutput(self)
+        self.media_player = QMediaPlayer(self)
+        self.media_player.setAudioOutput(self.audio_output)
+        self.media_player.setVideoOutput(self.video_widget)
+        self.media_player.durationChanged.connect(self.on_media_duration_changed)
+        self.media_player.positionChanged.connect(self.on_media_position_changed)
+        self.media_player.playbackStateChanged.connect(self.on_playback_state_changed)
+        self.media_player.errorOccurred.connect(self.on_media_error)
+
+        editor_box = QGroupBox("Transcript Editor")
+        editor_layout = QVBoxLayout(editor_box)
+        editor_layout.setContentsMargins(16, 20, 16, 14)
+        editor_layout.setSpacing(8)
+        editor_header = QHBoxLayout()
+        editor_header.setContentsMargins(0, 0, 0, 0)
+        self.transcript_label = QLabel("No transcript loaded")
+        self.transcript_label.setObjectName("transcriptLabel")
+        self.transcript_label.setWordWrap(True)
+        editor_header.addWidget(self.transcript_label, stretch=1)
+
+        self.open_transcript_btn = QPushButton("Open transcript")
+        self.open_transcript_btn.setProperty("role", "secondary")
+        self.open_transcript_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton))
+        self.open_transcript_btn.clicked.connect(self.open_transcript_file)
+        self.open_transcript_btn.setToolTip("Open an existing transcript file for quick corrections.")
+        editor_header.addWidget(self.open_transcript_btn)
+
+        self.save_transcript_btn = QPushButton("Save changes")
+        self.save_transcript_btn.setProperty("role", "primary")
+        self.save_transcript_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
+        self.save_transcript_btn.setEnabled(False)
+        self.save_transcript_btn.clicked.connect(self.save_transcript)
+        self.save_transcript_btn.setToolTip("Save the corrected transcript back to the loaded file.")
+        editor_header.addWidget(self.save_transcript_btn)
+        editor_layout.addLayout(editor_header)
+
+        self.transcript_editor = QPlainTextEdit()
+        self.transcript_editor.setObjectName("transcriptEditor")
+        self.transcript_editor.setPlaceholderText("Completed transcripts open here for quick correction.")
+        self.transcript_editor.setEnabled(False)
+        self.transcript_editor.setToolTip("Edit the generated txt, srt, or vtt transcript.")
+        editor_layout.addWidget(self.transcript_editor)
+        review_splitter.addWidget(editor_box)
+
+        log_panel = QWidget()
+        log_panel_layout = QVBoxLayout(log_panel)
+        log_panel_layout.setContentsMargins(0, 0, 0, 0)
+        log_panel_layout.setSpacing(8)
         log_header = QHBoxLayout()
         log_header.setContentsMargins(0, 0, 0, 0)
         log_title = QLabel("Log")
@@ -428,12 +529,14 @@ class MainWindow(QMainWindow):
         self.log_auto_scroll_checkbox.setToolTip("Keep the log pinned to the newest line.")
         self.log_auto_scroll_checkbox.toggled.connect(self.set_log_auto_scroll)
         log_header.addWidget(self.log_auto_scroll_checkbox)
-        right_layout.addLayout(log_header)
+        log_panel_layout.addLayout(log_header)
         self.log = QPlainTextEdit()
         self.log.setObjectName("logPanel")
         self.log.setReadOnly(True)
         self.log.setToolTip("Detailed log output from transcription and downloads.")
-        right_layout.addWidget(self.log)
+        log_panel_layout.addWidget(self.log)
+        review_splitter.addWidget(log_panel)
+        review_splitter.setSizes([230, 260, 170])
 
         splitter.addWidget(left)
         splitter.addWidget(right)
@@ -444,6 +547,7 @@ class MainWindow(QMainWindow):
         self.selected_file = path
         self.file_label.setText(str(path))
         self.append_log(f"Selected: {path}")
+        self.load_media(path)
 
     def browse_file(self) -> None:
         file_path, _ = QFileDialog.getOpenFileName(
@@ -559,11 +663,13 @@ class MainWindow(QMainWindow):
         self.thread_pool.start(worker)
 
     def on_transcription_finished(self, output_path) -> None:
+        output_path = Path(output_path)
         self.progress.setRange(0, 1)
         self.progress.setValue(1)
         self.progress.setFormat("Done")
         self.progress_label.setText("Transcription complete")
         self.append_log(f"Done: {output_path}")
+        self.load_transcript(output_path)
         QMessageBox.information(self, "Completed", f"Output saved to:\n{output_path}")
         self.transcribe_btn.setEnabled(True)
         self.stop_btn.setEnabled(False)
@@ -584,6 +690,91 @@ class MainWindow(QMainWindow):
 
     def open_outputs(self) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(outputs_dir())))
+
+    def load_media(self, path: Path) -> None:
+        self.media_player.stop()
+        self.media_player.setSource(QUrl.fromLocalFile(str(path)))
+        self.media_slider.setValue(0)
+        self.media_slider.setEnabled(True)
+        self.play_pause_btn.setEnabled(True)
+        self.media_stop_btn.setEnabled(True)
+        self.play_pause_btn.setText("Play")
+        self.play_pause_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+        self.position_label.setText("00:00")
+        self.duration_label.setText("00:00")
+
+    def toggle_playback(self) -> None:
+        if self.media_player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            self.media_player.pause()
+            return
+        self.media_player.play()
+
+    def stop_media(self) -> None:
+        self.media_player.stop()
+        self.media_slider.setValue(0)
+
+    def seek_media(self, position: int) -> None:
+        self.media_player.setPosition(position)
+
+    def on_media_duration_changed(self, duration: int) -> None:
+        self.media_slider.setRange(0, max(0, duration))
+        self.duration_label.setText(_format_milliseconds(duration))
+
+    def on_media_position_changed(self, position: int) -> None:
+        if not self.media_slider.isSliderDown():
+            self.media_slider.setValue(position)
+        self.position_label.setText(_format_milliseconds(position))
+
+    def on_playback_state_changed(self, state) -> None:
+        is_playing = state == QMediaPlayer.PlaybackState.PlayingState
+        self.play_pause_btn.setText("Pause" if is_playing else "Play")
+        icon = QStyle.StandardPixmap.SP_MediaPause if is_playing else QStyle.StandardPixmap.SP_MediaPlay
+        self.play_pause_btn.setIcon(self.style().standardIcon(icon))
+
+    def on_media_error(self, error, message: str) -> None:
+        if error == QMediaPlayer.Error.NoError:
+            return
+        self.append_log(f"MEDIA ERROR: {message or error}")
+
+    def open_transcript_file(self) -> None:
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open transcript",
+            str(outputs_dir()),
+            "Transcript files (*.txt *.srt *.vtt);;All files (*.*)",
+        )
+        if file_path:
+            self.load_transcript(Path(file_path))
+
+    def load_transcript(self, path: Path) -> None:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            text = path.read_text()
+        except Exception as exc:
+            QMessageBox.critical(self, "Transcript error", f"Could not open transcript:\n{exc}")
+            return
+
+        self.current_transcript_path = path
+        self.transcript_editor.setPlainText(text)
+        self.transcript_editor.setEnabled(True)
+        self.save_transcript_btn.setEnabled(True)
+        self.transcript_label.setText(str(path))
+        self.append_log(f"Transcript loaded: {path}")
+
+    def save_transcript(self) -> None:
+        if not self.current_transcript_path:
+            QMessageBox.warning(self, "Missing transcript", "Open a transcript before saving.")
+            return
+
+        try:
+            self.current_transcript_path.write_text(self.transcript_editor.toPlainText(), encoding="utf-8")
+        except Exception as exc:
+            QMessageBox.critical(self, "Save error", f"Could not save transcript:\n{exc}")
+            return
+
+        self.append_log(f"Transcript saved: {self.current_transcript_path}")
+        self.progress_label.setText(f"Saved transcript: {self.current_transcript_path.name}")
 
     def download_model(self, model_key: str) -> None:
         model = MODEL_DEFS.get(model_key)
@@ -669,6 +860,11 @@ class MainWindow(QMainWindow):
             "4) Opzionalmente imposta la lingua sorgente o lascia Auto-detect per la rilevazione automatica.\n"
             "5) Scegli se mantenere la lingua originale o tradurre in inglese.\n"
             "6) Clicca Transcribe per avviare; usa Stop per annullare la trascrizione in corso.\n\n"
+            "Review:\n"
+            "- Il file sorgente selezionato viene caricato nel player di anteprima.\n"
+            "- Quando la trascrizione finisce, il file generato si apre nel Transcript Editor.\n"
+            "- Correggi il testo e usa Save changes per salvare sullo stesso file.\n"
+            "- Usa Open transcript per aprire una trascrizione esistente.\n\n"
             "Appearance:\n"
             "- Usa View > Theme per passare tra tema chiaro e tema scuro.\n"
             "- La scelta del tema viene ricordata al prossimo avvio.\n\n"
@@ -690,8 +886,8 @@ class MainWindow(QMainWindow):
             "About Transcriber-LP",
             (
                 f"Transcriber-LP {APP_VERSION}\n\n"
-                "Offline desktop transcription app for macOS.\n"
-                "Versioning starts at 0.1.0 for the first tracked public-ready baseline."
+                "Offline desktop transcription and review app for macOS.\n"
+                "Versioning follows semantic versioning from the first tracked public-ready baseline."
             ),
         )
 
@@ -1051,6 +1247,36 @@ class MainWindow(QMainWindow):
                         "QPlainTextEdit#logPanel",
                         'font-family: "Menlo", "Consolas", monospace;\nfont-size: 12px;\nline-height: 1.4;',
                     ),
+                    block(
+                        "QPlainTextEdit#transcriptEditor",
+                        'font-family: "Menlo", "Consolas", monospace;\nfont-size: 13px;\nline-height: 1.5;',
+                    ),
+                    block(
+                        "QVideoWidget#videoPreview",
+                        "\n".join(
+                            [
+                                "background: #050709;",
+                                f"border: 1px solid {c['list_border']};",
+                                "border-radius: 8px;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QLabel#timeLabel",
+                        f"color: {c['status_text']};\nfont-weight: 650;",
+                    ),
+                    block(
+                        "QLabel#transcriptLabel",
+                        f"color: {c['status_text']};\nfont-weight: 600;",
+                    ),
+                    block(
+                        "QSlider::groove:horizontal",
+                        f"height: 6px;\nbackground: {c['progress_bg']};\nborder-radius: 3px;",
+                    ),
+                    block(
+                        "QSlider::handle:horizontal",
+                        f"width: 14px;\nheight: 14px;\nmargin: -5px 0;\nbackground: {c['primary_bg']};\nborder: 1px solid {c['primary_border']};\nborder-radius: 7px;",
+                    ),
                     block("QListWidget::item", "border-radius: 7px;\npadding: 5px 7px;\nmargin: 2px;"),
                     block("QListWidget::item:selected", f"background: {c['selection_bg']};"),
                     block(
@@ -1094,3 +1320,12 @@ def _format_bytes(value):
                 return f"{int(size)} {unit}"
             return f"{size:.1f} {unit}"
         size /= 1024
+
+
+def _format_milliseconds(value: int) -> str:
+    total_seconds = max(0, int(value / 1000))
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours:
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    return f"{minutes:02d}:{seconds:02d}"
