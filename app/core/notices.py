@@ -9,7 +9,7 @@ Runtime components:
 - requests: Python Software Foundation / Requests maintainers; originally created by Kenneth Reitz, Apache-2.0.
 - requests transitive dependencies: urllib3 contributors (MIT), certifi contributors / Mozilla CA bundle (MPL-2.0), charset-normalizer contributors (MIT), idna contributors (BSD-3-Clause).
 - FFmpeg / ffmpeg / ffprobe: FFmpeg project contributors, LGPLv2.1-or-later or GPLv2-or-later depending on the build.
-- whisper.cpp / whisper-cli: Georgi Gerganov and whisper.cpp contributors, MIT.
+- whisper.cpp / whisper-cli and related ggml libraries: Georgi Gerganov and whisper.cpp contributors, MIT.
 - Whisper model files: OpenAI Whisper models converted/distributed for whisper.cpp by Georgi Gerganov; verify each model file's upstream license before redistribution.
 
 Build-only components:
@@ -18,6 +18,6 @@ Build-only components:
 
 Policy:
 - Do not commit or distribute proprietary binaries, codecs, or model weights.
-- Do not bundle ffmpeg, whisper-cli, or model files unless the specific binaries/files are open-source and their license notices are included.
+- Do not bundle ffmpeg, whisper-cli, dynamic libraries, or model files unless the specific files are open-source, provenance is recorded, and license notices are included.
 - See docs/THIRD_PARTY_NOTICE.md for source URLs and distribution guidance.
 """

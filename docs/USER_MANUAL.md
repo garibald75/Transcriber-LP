@@ -41,6 +41,8 @@ The app looks for models in this order:
 
 The model manager can download supported `whisper.cpp` models into the user models directory.
 
+Only models with a checksum in `app/core/model_manager.py` are enabled for in-app download. Models without a checksum must be installed manually after their provenance is verified.
+
 ## Outputs
 
 Transcription files are saved to the folder selected when transcription starts. The default output area used by the app is:
@@ -51,17 +53,19 @@ Transcription files are saved to the folder selected when transcription starts. 
 
 ## Packaging Requirements
 
-Before building a macOS app bundle, provide these files:
+Before building a macOS app bundle, provide these local files:
 
 ```text
 third_party/macos/ffmpeg
 third_party/macos/ffprobe
 third_party/macos/whisper-cli
+third_party/macos/<whisper-cli @rpath dylibs>
 third_party/macos/models/ggml-base.bin
 ```
 
-Only distribute third-party binaries and models when their licenses allow it.
-Complete `docs/DISTRIBUTION_CHECKLIST.md` before publishing a release.
+Use `otool -L third_party/macos/whisper-cli` to identify the `.dylib` files required by the local `whisper-cli` build. `scripts/build_whisper_cli.sh` copies these libraries for the default macOS build flow.
+
+Only distribute third-party binaries and models when their licenses allow it. Complete `docs/DISTRIBUTION_CHECKLIST.md` before publishing a release.
 
 ## Open-Source Licenses and Owners
 
@@ -73,4 +77,4 @@ The app is intended to use only open-source components. The current third-party 
 docs/THIRD_PARTY_NOTICE.md
 ```
 
-Before distributing a packaged app, verify the exact `ffmpeg`, `ffprobe`, `whisper-cli`, and model files you ship. Do not bundle proprietary binaries, codecs, or model weights with unclear redistribution terms.
+Before distributing a packaged app, verify the exact `ffmpeg`, `ffprobe`, `whisper-cli`, dynamic libraries, and model files you ship. Do not bundle proprietary binaries, codecs, or model weights with unclear redistribution terms.

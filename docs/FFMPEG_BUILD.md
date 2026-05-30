@@ -1,6 +1,6 @@
 # FFmpeg Build Provenance
 
-Transcriber-LP does not commit `ffmpeg` or `ffprobe` binaries. If you distribute a packaged app that bundles them, document the exact build here before release.
+Transcriber-LP does not commit `ffmpeg` or `ffprobe` binaries. If a packaged app bundles them, document the exact build here before release.
 
 ## Required Release Information
 
@@ -17,7 +17,7 @@ Transcriber-LP does not commit `ffmpeg` or `ffprobe` binaries. If you distribute
 
 ## Current Local Smoke-Test Build
 
-These binaries are not committed to the repository. They were used only to validate the local macOS Apple Silicon package.
+These binaries are not committed to the repository. They were used only to validate a local macOS Apple Silicon package.
 
 - Binary provider: Martin Riedl's FFmpeg Build Server
 - FFmpeg / FFprobe version: 8.1.1-https://www.martin-riedl.de
@@ -32,7 +32,7 @@ These binaries are not committed to the repository. They were used only to valid
 - Configure flags: includes `--enable-gpl`, `--enable-openssl`, `--enable-libx264`, `--enable-libx265`, `--enable-libmp3lame`, and other external libraries reported by `ffmpeg -version`
 - License classification: GPL build because `--enable-gpl` is present
 - Corresponding source URL: https://ffmpeg.org/download.html and the provider's build-script link from https://ffmpeg.martin-riedl.de/
-- License text included in bundle: no, not release-ready
+- License text included in bundle: no, local smoke-test only
 
 ## Distribution Rules
 
@@ -41,6 +41,6 @@ These binaries are not committed to the repository. They were used only to valid
 - If the build is LGPL, preserve user relinking rights and include license notices.
 - If the build is GPL, the distributed app bundle must comply with GPL obligations for the combined distribution.
 - Keep the exact license text and source offer with the release artifact.
-- For a portfolio/interview source repository, do not commit these binaries. For a public packaged release, either use a license-compatible FFmpeg build and include exact notices, or publish the whole combined distribution under GPL-compatible terms.
+- For a portfolio/interview source repository, do not commit these binaries. For a public packaged release, either use a license-compatible FFmpeg build and include exact notices, or publish the combined distribution under GPL-compatible terms.
 
 See https://ffmpeg.org/legal.html for FFmpeg's official guidance.

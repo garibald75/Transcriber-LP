@@ -1,52 +1,69 @@
-# Transcriber-LP Test Plan
+# Test Plan
 
-## Obiettivo
-Aggiungere un livello minimo di test automatici per dimostrare qualità e stabilità quando il repository viene esaminato.
+Transcriber-LP keeps a small, repeatable test suite that can run in CI and in a clean local Python environment. The goal is to catch syntax, import, command construction, and model-management regressions before packaging.
 
-## Scope
-- Validazione sintassi Python per tutti i moduli principali
-- Import test di base per i componenti core e UI
-- Verifica del manager dei modelli senza dipendenza da GUI
-- Integrazione con GitHub Actions per esecuzione automatica su push/PR
+## Automated Checks
 
-## Success criteria
-- Tutti i file Python nel progetto passano la compilazione `py_compile`
-- I test automatici di importazione passano in un ambiente pulito
-- Il workflow GitHub Actions è configurato e pronto per l'esecuzione
+Run the same checks locally before pushing changes:
 
-## Test automatici
-### 1. Compilazione Python
-- Eseguire `python -m py_compile $(find app -name '*.py')`
-- Scopo: intercettare errori di sintassi prima che il codice venga esaminato
+```bash
+find app -name '*.py' | sort | xargs python -m py_compile
+python -m unittest discover tests
+```
 
-### 2. Import basic
-- Eseguire `python -m unittest discover tests`
-- Verifica che i moduli principali siano importabili
-- Evita dipendenze complesse come il rendering UI in fase di test
+For checkouts inside cloud-synced folders, run `py_compile` with a temporary cache directory, for example:
 
-## Test manuali consigliati
-### UI
-- Avviare l'applicazione locale con `python -m app.main`
-- Verificare: drag & drop, selezione file, pulsanti Transcribe/Stop, menu Help
+```bash
+find app -name '*.py' | sort | env PYTHONPYCACHEPREFIX=/private/tmp/transcriber-pycache xargs python -m py_compile
+```
 
-### Model manager
-- Verificare la lista modelli e la risoluzione dei percorsi
-- Verificare il comportamento con modelli mancanti
+CI runs these checks on Python 3.9 and 3.11 using `.github/workflows/ci.yml`.
 
-### Packaging macOS M1
-- Eseguire lo script `scripts/build_macos.sh`
-- Verificare che `dist/Transcriber-LP.app` si apri correttamente su M1
+## Current Coverage
 
-## GitHub
-Questo progetto può usare GitHub Actions per eseguire i test automatici.
-Una pipeline base comprende:
-- checkout
-- installazione Python
-- installazione dipendenze (`pip install -r requirements.txt`)
-- esecuzione `python -m py_compile`
-- esecuzione `python -m unittest discover tests`
+- Python syntax validation for all modules under `app/`
+- Basic import coverage for core and UI modules
+- Command construction tests for FFmpeg and `whisper-cli`
+- Model manager tests for model discovery, missing models, and checksum enforcement
 
-## Prossimi passi
-1. Aggiungere altri test unitari per `app/core/model_manager.py`
-2. Aggiungere test di integrazione per `app/core/transcriber.py` con mock `subprocess`
-3. Estendere la pipeline con linting e controllo delle dipendenze
+## Manual Smoke Tests
+
+### Development UI
+
+```bash
+python -m app.main
+```
+
+Verify file selection, drag and drop, output format selection, model selection, theme switching, `Transcribe`, `Stop`, and the Help menu.
+
+### macOS Bundle
+
+Prepare local runtime inputs under `third_party/macos/`, then run:
+
+```bash
+bash scripts/build_macos.sh
+open -n dist/Transcriber-LP.app
+```
+
+Verify the app opens on the target architecture and that the bundled `ffmpeg`, `ffprobe`, `whisper-cli`, and model file are usable.
+
+### Transcription Runtime
+
+For a packaged Apple Silicon build, confirm:
+
+- bundled executables are `arm64`
+- `whisper-cli --help` runs from inside the app bundle
+- a short audio file can be converted with bundled `ffmpeg`
+- `whisper-cli` can load the bundled model and produce a `txt`, `srt`, or `vtt` file
+
+## Known Release Checks
+
+- Build and notarization should be performed outside cloud-synced folders when possible.
+- `codesign --verify --deep --strict --verbose=2` should pass on the final release bundle.
+- Release artifacts must include exact third-party license texts and provenance records.
+
+## Next Test Targets
+
+- Add subprocess-mocked tests for `app/core/transcriber.py`.
+- Add model-download tests with mocked HTTP responses.
+- Add a minimal smoke test script for packaged bundle validation.

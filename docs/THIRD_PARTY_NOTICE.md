@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-05-30.
 
-Transcriber-LP is intended to use only open-source third-party software and open-source model assets. This file identifies the current owners/maintainers, licenses, and source locations for components used by the app or by the build system.
+Transcriber-LP is intended to use only open-source third-party software and model assets with documented provenance. This file identifies the current owners/maintainers, licenses, and source locations for components used by the app or by the build system.
 
 This notice is not legal advice. Before distributing a packaged app, verify the exact binaries and model files you ship.
 
@@ -19,7 +19,7 @@ This notice is not legal advice. Before distributing a packaged app, verify the 
 | charset-normalizer | charset-normalizer contributors | MIT | Transitive dependency of requests | https://pypi.org/project/charset-normalizer/ |
 | idna | idna contributors | BSD-3-Clause | Transitive dependency of requests | https://pypi.org/project/idna/ |
 | FFmpeg / ffmpeg / ffprobe | FFmpeg project contributors | LGPLv2.1-or-later, or GPLv2-or-later depending on build configuration | Media probing and audio extraction | https://ffmpeg.org/legal.html |
-| whisper.cpp / whisper-cli | Georgi Gerganov and whisper.cpp contributors | MIT | Local speech-to-text engine | https://github.com/ggml-org/whisper.cpp |
+| whisper.cpp / whisper-cli and related ggml libraries | Georgi Gerganov and whisper.cpp contributors | MIT | Local speech-to-text engine | https://github.com/ggml-org/whisper.cpp |
 | Whisper model files | OpenAI Whisper models, converted/distributed for whisper.cpp by Georgi Gerganov | Verify the exact model file before redistribution; OpenAI Whisper source is MIT | Local transcription model weights | https://github.com/openai/whisper and https://huggingface.co/ggerganov/whisper.cpp |
 
 ## Build-Only Components
@@ -37,6 +37,7 @@ This notice is not legal advice. Before distributing a packaged app, verify the 
 - Do not bundle proprietary codecs, proprietary ffmpeg builds, proprietary speech engines, or model weights whose redistribution terms are unclear.
 - If distributing `ffmpeg`/`ffprobe`, include the license text for the exact build and comply with LGPL/GPL source and relinking requirements.
 - If distributing `PySide6`/Qt, comply with LGPLv3 or GPLv3 obligations, including license text and user rights required by the selected license.
+- If distributing `whisper-cli`, include the related dynamic libraries required by that local build and keep their notices with the release artifact.
 - If distributing model files, document the exact model source, owner, license, and conversion provenance.
 - Keep this notice, README, and the in-app `Help > Open-source licenses` dialog aligned whenever dependencies change.
 
