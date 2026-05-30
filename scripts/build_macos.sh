@@ -9,6 +9,11 @@ if [[ ! -f "third_party/macos/ffmpeg" ]]; then
   exit 1
 fi
 
+if [[ ! -f "third_party/macos/ffprobe" ]]; then
+  echo "Missing third_party/macos/ffprobe"
+  exit 1
+fi
+
 if [[ ! -f "third_party/macos/whisper-cli" ]]; then
   echo "Missing third_party/macos/whisper-cli"
   exit 1

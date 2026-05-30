@@ -19,7 +19,7 @@ This notice is not legal advice. Before distributing a packaged app, verify the 
 | charset-normalizer | charset-normalizer contributors | MIT | Transitive dependency of requests | https://pypi.org/project/charset-normalizer/ |
 | idna | idna contributors | BSD-3-Clause | Transitive dependency of requests | https://pypi.org/project/idna/ |
 | FFmpeg / ffmpeg / ffprobe | FFmpeg project contributors | LGPLv2.1-or-later, or GPLv2-or-later depending on build configuration | Media probing and audio extraction | https://ffmpeg.org/legal.html |
-| whisper.cpp / whisper-cli | Georgi Gerganov and whisper.cpp contributors | MIT | Local speech-to-text engine | https://github.com/ggerganov/whisper.cpp |
+| whisper.cpp / whisper-cli | Georgi Gerganov and whisper.cpp contributors | MIT | Local speech-to-text engine | https://github.com/ggml-org/whisper.cpp |
 | Whisper model files | OpenAI Whisper models, converted/distributed for whisper.cpp by Georgi Gerganov | Verify the exact model file before redistribution; OpenAI Whisper source is MIT | Local transcription model weights | https://github.com/openai/whisper and https://huggingface.co/ggerganov/whisper.cpp |
 
 ## Build-Only Components
@@ -39,3 +39,10 @@ This notice is not legal advice. Before distributing a packaged app, verify the 
 - If distributing `PySide6`/Qt, comply with LGPLv3 or GPLv3 obligations, including license text and user rights required by the selected license.
 - If distributing model files, document the exact model source, owner, license, and conversion provenance.
 - Keep this notice, README, and the in-app `Help > Open-source licenses` dialog aligned whenever dependencies change.
+
+## Release Documentation
+
+- Record FFmpeg binary provenance in `docs/FFMPEG_BUILD.md`.
+- Record model provenance in `docs/MODEL_PROVENANCE.md`.
+- Use `docs/DISTRIBUTION_CHECKLIST.md` before publishing a release artifact.
+- Include `LICENSE`, this notice, and the exact third-party license texts inside distributed app bundles.

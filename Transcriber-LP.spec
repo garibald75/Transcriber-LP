@@ -11,8 +11,15 @@ version = (root / "app" / "version.py").read_text().split('APP_VERSION = "')[1].
 
 datas = [
     (str(vendor / "ffmpeg"), "vendor"),
+    (str(vendor / "ffprobe"), "vendor"),
     (str(vendor / "whisper-cli"), "vendor"),
     (str(model_dir / "ggml-base.bin"), "vendor/models"),
+    (str(root / "LICENSE"), "."),
+    (str(root / "CHANGELOG.md"), "."),
+    (str(root / "docs" / "THIRD_PARTY_NOTICE.md"), "docs"),
+    (str(root / "docs" / "FFMPEG_BUILD.md"), "docs"),
+    (str(root / "docs" / "MODEL_PROVENANCE.md"), "docs"),
+    (str(root / "docs" / "DISTRIBUTION_CHECKLIST.md"), "docs"),
 ]
 
 

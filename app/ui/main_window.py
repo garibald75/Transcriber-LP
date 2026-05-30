@@ -314,6 +314,8 @@ class MainWindow(QMainWindow):
         self.download_started_at = time.monotonic()
         self.active_download_model_key = model_key
         self._set_download_controls_enabled(False)
+        self.transcribe_btn.setEnabled(False)
+        self.stop_btn.setEnabled(False)
         worker = DownloadModelWorker(model_key, self.model_manager)
         worker.signals.progress.connect(self.on_download_progress)
         worker.signals.error.connect(self.on_worker_error)
@@ -351,6 +353,7 @@ class MainWindow(QMainWindow):
         self.append_log(f"Model downloaded: {path}")
         self.refresh_models()
         self._set_download_controls_enabled(True)
+        self.transcribe_btn.setEnabled(True)
         self.current_worker = None
         self.active_download_model_key = None
 

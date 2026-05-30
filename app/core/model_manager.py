@@ -140,6 +140,9 @@ class ModelManager:
             raise ValueError(f"Unsupported model: {model_key}")
 
         model = MODEL_DEFS[model_key]
+        if not model.sha1:
+            raise ValueError(f"Model download is not enabled without a checksum: {model.filename}")
+
         target = self.user_models_dir / model.filename
         temp = target.with_suffix(".part")
 

@@ -34,6 +34,12 @@ class ModelManagerTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 manager.resolve_model_path("base")
 
+    def test_download_model_requires_checksum(self):
+        manager = ModelManager()
+
+        with self.assertRaisesRegex(ValueError, "without a checksum"):
+            manager.download_model("large-v3")
+
 
 if __name__ == "__main__":
     unittest.main()

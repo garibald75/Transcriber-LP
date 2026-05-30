@@ -1,5 +1,9 @@
 # Transcriber-LP
 
+[![CI](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml/badge.svg)](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml)
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 Current version: `0.1.0`
 
 Offline desktop transcription app for macOS, built with PySide6 and `whisper.cpp`.
@@ -43,14 +47,15 @@ The source of truth is `app/version.py`. macOS bundle metadata is read from that
 ## Third-party components and licenses
 
 - `ffmpeg` / `ffprobe`: LGPL/GPL-licensed media toolkit. Verify the upstream build license before bundling. See https://ffmpeg.org/legal.html
-- `whisper.cpp` / `whisper-cli`: upstream project by Georgi Gerganov, typically licensed under MIT. See https://github.com/ggerganov/whisper.cpp
+- `whisper.cpp` / `whisper-cli`: upstream project by Georgi Gerganov and contributors, typically licensed under MIT. See https://github.com/ggml-org/whisper.cpp
 - `PySide6`: Qt for Python, licensed under LGPL. See https://doc.qt.io/qtforpython/
 - `requests`: Apache License 2.0.
 - Models (for example `ggml-base.bin`): may have separate licensing and distribution requirements.
 
 This repository avoids committing binary distributions and model weights. Runtime binaries are supplied from `third_party/macos/` before packaging, and should only be added when their licenses are compatible with your distribution plan.
 
-No project source license file is currently declared in this repository. Add a top-level `LICENSE` before publishing or accepting external contributions.
+Transcriber-LP source code is licensed under the MIT License. See `LICENSE`.
+Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_PROVENANCE.md`, and `docs/DISTRIBUTION_CHECKLIST.md`.
 
 ## Repository structure
 
@@ -59,6 +64,7 @@ No project source license file is currently declared in this repository. Add a t
 - `tests/` unit tests and import checks
 - `docs/USER_MANUAL.md` end-user manual
 - `docs/THIRD_PARTY_NOTICE.md` open-source owners, licenses, and redistribution policy
+- `docs/DISTRIBUTION_CHECKLIST.md` release readiness checklist
 - `scripts/` packaging and helper scripts
 - `third_party/macos/` required runtime binaries before packaging
 - `.github/workflows/` CI pipeline
@@ -134,3 +140,4 @@ python -m unittest discover tests
 - The repo is configured to keep binary artifacts out of version control.
 - The UI includes tooltips and an inline help manual for a better user experience.
 - The app includes `Help > Open-source licenses` and `docs/THIRD_PARTY_NOTICE.md` to cite third-party owners and licenses.
+- Release artifacts should include exact third-party license texts and provenance for bundled binaries and models.
