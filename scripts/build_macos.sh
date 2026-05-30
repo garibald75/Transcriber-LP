@@ -24,6 +24,44 @@ if [[ ! -f "third_party/macos/models/ggml-base.bin" ]]; then
   exit 1
 fi
 
+ICON_SVG="app/assets/transcriber_icon.svg"
+ICON_ICNS="app/assets/transcriber_icon.icns"
+
+if [[ ! -f "$ICON_ICNS" || "$ICON_SVG" -nt "$ICON_ICNS" ]]; then
+  if ! command -v qlmanage >/dev/null 2>&1; then
+    echo "Missing qlmanage, required to render $ICON_SVG"
+    exit 1
+  fi
+
+  if ! command -v iconutil >/dev/null 2>&1; then
+    echo "Missing iconutil, required to build $ICON_ICNS"
+    exit 1
+  fi
+
+  tmpdir="$(mktemp -d)"
+  trap 'rm -rf "$tmpdir"' EXIT
+  thumb_dir="$tmpdir/thumb"
+  iconset="$tmpdir/transcriber_icon.iconset"
+  mkdir -p "$thumb_dir" "$iconset"
+
+  qlmanage -t -s 1024 -o "$thumb_dir" "$ICON_SVG" >/dev/null
+  rendered="$thumb_dir/$(basename "$ICON_SVG").png"
+
+  if [[ ! -f "$rendered" ]]; then
+    echo "Failed to render $ICON_SVG"
+    exit 1
+  fi
+
+  for size in 16 32 128 256 512; do
+    sips -z "$size" "$size" "$rendered" --out "$iconset/icon_${size}x${size}.png" >/dev/null
+    retina=$((size * 2))
+    sips -z "$retina" "$retina" "$rendered" --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
+  done
+
+  xattr -cr "$iconset" 2>/dev/null || true
+  iconutil -c icns "$iconset" -o "$ICON_ICNS"
+fi
+
 python -m PyInstaller \
   --noconfirm \
   --clean \
