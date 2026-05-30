@@ -3,8 +3,8 @@ import time
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QThreadPool
-from PySide6.QtGui import QAction, QDesktopServices
+from PySide6.QtCore import QSettings, Qt, QThreadPool
+from PySide6.QtGui import QAction, QActionGroup, QDesktopServices
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -34,6 +34,130 @@ from app.ui.workers import DownloadModelWorker, TranscribeWorker
 from app.version import APP_VERSION
 
 
+THEME_PALETTES = {
+    "light": {
+        "app_bg": "#f4f7fb",
+        "root_text": "#172635",
+        "menu_bg": "#f4f7fb",
+        "menu_text": "#243545",
+        "menu_hover": "#e3edf5",
+        "menu_panel": "#ffffff",
+        "menu_border": "#d2dde7",
+        "title": "#102131",
+        "muted": "#647789",
+        "label": "#263949",
+        "status_text": "#526678",
+        "status_bg": "#ffffff",
+        "status_border": "#d7e1ea",
+        "section_title": "#142536",
+        "drop_text": "#0d5d67",
+        "drop_bg": "#edf8fb",
+        "drop_border": "#86b7c5",
+        "drop_hover_bg": "#e1f5f6",
+        "drop_hover_border": "#0aa37f",
+        "group_text": "#142536",
+        "group_bg": "#ffffff",
+        "group_border": "#d8e2eb",
+        "group_title_bg": "#f4f7fb",
+        "field_label": "#627486",
+        "button_text": "#203140",
+        "button_bg": "#edf3f8",
+        "button_border": "#cddbe5",
+        "button_hover_bg": "#e3edf5",
+        "button_hover_border": "#b8cbd8",
+        "button_pressed_bg": "#d9e7ef",
+        "button_disabled_text": "#98a7b4",
+        "button_disabled_bg": "#edf1f4",
+        "button_disabled_border": "#dbe3ea",
+        "primary_text": "#06251e",
+        "primary_bg": "#1cc79a",
+        "primary_border": "#18b58c",
+        "primary_hover_bg": "#27d9aa",
+        "danger_text": "#fff7f8",
+        "danger_bg": "#c83d55",
+        "danger_border": "#b9344b",
+        "danger_hover_bg": "#d84f66",
+        "secondary_bg": "#f7fafc",
+        "secondary_border": "#cddbe5",
+        "input_text": "#142536",
+        "input_bg": "#ffffff",
+        "input_border": "#ccd9e4",
+        "input_hover_border": "#8fb0c4",
+        "input_hover_bg": "#fbfdff",
+        "arrow": "#0aa37f",
+        "list_text": "#263949",
+        "list_bg": "#ffffff",
+        "list_border": "#d7e1ea",
+        "selection_bg": "#d9f4ec",
+        "selection_text": "#102131",
+        "progress_bg": "#e2eaf1",
+        "progress_chunk": "#1cc79a",
+        "splitter": "#d5e0e9",
+        "scrollbar": "#c4d2dd",
+    },
+    "dark": {
+        "app_bg": "#0d151f",
+        "root_text": "#e8f1f8",
+        "menu_bg": "#0d151f",
+        "menu_text": "#d9e8f1",
+        "menu_hover": "#1b2a37",
+        "menu_panel": "#121d27",
+        "menu_border": "#253847",
+        "title": "#f6fbff",
+        "muted": "#89a2b2",
+        "label": "#dce9f1",
+        "status_text": "#93aabb",
+        "status_bg": "#111c26",
+        "status_border": "#223240",
+        "section_title": "#f6fbff",
+        "drop_text": "#dffaf5",
+        "drop_bg": "#101c27",
+        "drop_border": "#3a6070",
+        "drop_hover_bg": "#122535",
+        "drop_hover_border": "#64f0cf",
+        "group_text": "#f2f7fb",
+        "group_bg": "#111c26",
+        "group_border": "#223443",
+        "group_title_bg": "#0d151f",
+        "field_label": "#91a7b6",
+        "button_text": "#e8f1f8",
+        "button_bg": "#182737",
+        "button_border": "#314758",
+        "button_hover_bg": "#213547",
+        "button_hover_border": "#45667a",
+        "button_pressed_bg": "#10202d",
+        "button_disabled_text": "#647987",
+        "button_disabled_bg": "#111922",
+        "button_disabled_border": "#1f2a34",
+        "primary_text": "#05201d",
+        "primary_bg": "#72f2d3",
+        "primary_border": "#72f2d3",
+        "primary_hover_bg": "#8dffe3",
+        "danger_text": "#ffe9ec",
+        "danger_bg": "#4b202a",
+        "danger_border": "#6f3441",
+        "danger_hover_bg": "#682938",
+        "secondary_bg": "#142331",
+        "secondary_border": "#2e4557",
+        "input_text": "#eff8fd",
+        "input_bg": "#0c1721",
+        "input_border": "#2d4354",
+        "input_hover_border": "#4f788d",
+        "input_hover_bg": "#101f2c",
+        "arrow": "#72f2d3",
+        "list_text": "#dbe9f1",
+        "list_bg": "#081019",
+        "list_border": "#223443",
+        "selection_bg": "#1f3d4c",
+        "selection_text": "#ffffff",
+        "progress_bg": "#162431",
+        "progress_chunk": "#72f2d3",
+        "splitter": "#182532",
+        "scrollbar": "#2f4656",
+    },
+}
+
+
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
@@ -45,12 +169,32 @@ class MainWindow(QMainWindow):
         self.current_worker = None
         self.download_started_at = 0.0
         self.active_download_model_key: str | None = None
+        self.settings = QSettings("Transcriber-LP", "Transcriber-LP")
+        saved_theme = self.settings.value("appearance/theme", "light")
+        self.theme_name = saved_theme if saved_theme in THEME_PALETTES else "light"
 
         self._build_ui()
         self.refresh_models()
 
     def _build_ui(self) -> None:
         menu_bar = self.menuBar()
+        view_menu = menu_bar.addMenu("View")
+        theme_menu = view_menu.addMenu("Theme")
+        self.theme_actions = QActionGroup(self)
+        self.theme_actions.setExclusive(True)
+
+        self.light_theme_action = QAction("Light", self)
+        self.light_theme_action.setCheckable(True)
+        self.light_theme_action.triggered.connect(lambda: self.set_theme("light"))
+        self.theme_actions.addAction(self.light_theme_action)
+        theme_menu.addAction(self.light_theme_action)
+
+        self.dark_theme_action = QAction("Dark", self)
+        self.dark_theme_action.setCheckable(True)
+        self.dark_theme_action.triggered.connect(lambda: self.set_theme("dark"))
+        self.theme_actions.addAction(self.dark_theme_action)
+        theme_menu.addAction(self.dark_theme_action)
+
         help_menu = menu_bar.addMenu("Help")
         help_action = QAction("Show manual", self)
         help_action.triggered.connect(self.show_help)
@@ -237,7 +381,7 @@ class MainWindow(QMainWindow):
         splitter.addWidget(left)
         splitter.addWidget(right)
         splitter.setSizes([540, 780])
-        self._apply_theme()
+        self.set_theme(self.theme_name, persist=False)
 
     def set_selected_file(self, path: Path) -> None:
         self.selected_file = path
@@ -433,6 +577,9 @@ class MainWindow(QMainWindow):
             "4) Opzionalmente imposta la lingua sorgente o lascia Auto-detect per la rilevazione automatica.\n"
             "5) Scegli se mantenere la lingua originale o tradurre in inglese.\n"
             "6) Clicca Transcribe per avviare; usa Stop per annullare la trascrizione in corso.\n\n"
+            "Appearance:\n"
+            "- Usa View > Theme per passare tra tema chiaro e tema scuro.\n"
+            "- La scelta del tema viene ricordata al prossimo avvio.\n\n"
             "Note:\n"
             "- Le trascrizioni vengono salvate in ~/Library/Application Support/Transcriber-LP/outputs.\n"
             "- I modelli scaricati vengono memorizzati in ~/Library/Application Support/Transcriber-LP/models.\n"
@@ -459,280 +606,307 @@ class MainWindow(QMainWindow):
         for button in getattr(self, "download_buttons", []):
             button.setEnabled(enabled)
 
+    def set_theme(self, theme_name: str, persist: bool = True) -> None:
+        if theme_name not in THEME_PALETTES:
+            theme_name = "light"
+
+        self.theme_name = theme_name
+        if persist:
+            self.settings.setValue("appearance/theme", theme_name)
+
+        self._sync_theme_actions()
+        self._apply_theme()
+
+    def _sync_theme_actions(self) -> None:
+        if hasattr(self, "light_theme_action"):
+            self.light_theme_action.setChecked(self.theme_name == "light")
+        if hasattr(self, "dark_theme_action"):
+            self.dark_theme_action.setChecked(self.theme_name == "dark")
+
     def _apply_theme(self) -> None:
+        c = THEME_PALETTES[self.theme_name]
+
+        def block(selector: str, body: str) -> str:
+            return f"{selector} {{\n{body}\n}}\n"
+
         self.setStyleSheet(
-            """
-            QMainWindow {
-                background: #0d151f;
-            }
-
-            QWidget#appRoot {
-                background: #0d151f;
-                color: #e8f1f8;
-                font-family: "Inter", "SF Pro Text", "Segoe UI", sans-serif;
-                font-size: 13px;
-            }
-
-            QMenuBar {
-                background: #0d151f;
-                color: #d9e8f1;
-                border: none;
-                padding: 4px 8px;
-            }
-
-            QMenuBar::item {
-                border-radius: 6px;
-                padding: 6px 10px;
-            }
-
-            QMenuBar::item:selected {
-                background: #1b2a37;
-            }
-
-            QMenu {
-                background: #121d27;
-                color: #e8f1f8;
-                border: 1px solid #253847;
-                border-radius: 8px;
-                padding: 6px;
-            }
-
-            QMenu::item {
-                border-radius: 6px;
-                padding: 7px 24px 7px 10px;
-            }
-
-            QMenu::item:selected {
-                background: #213545;
-            }
-
-            QLabel {
-                color: #dce9f1;
-            }
-
-            QLabel#appTitle {
-                color: #f6fbff;
-                font-size: 24px;
-                font-weight: 700;
-                letter-spacing: 0;
-            }
-
-            QLabel#appSubtitle {
-                color: #89a2b2;
-                font-size: 13px;
-            }
-
-            QLabel#fileLabel,
-            QLabel#progressLabel {
-                color: #93aabb;
-                background: #111c26;
-                border: 1px solid #223240;
-                border-radius: 8px;
-                padding: 7px 10px;
-            }
-
-            QLabel#sectionTitle {
-                color: #f6fbff;
-                font-size: 15px;
-                font-weight: 700;
-            }
-
-            QLabel#dropZone {
-                color: #dffaf5;
-                background: #101c27;
-                border: 2px dashed #3a6070;
-                border-radius: 14px;
-                padding: 18px;
-                font-size: 18px;
-                font-weight: 700;
-            }
-
-            QLabel#dropZone:hover {
-                background: #122535;
-                border-color: #64f0cf;
-                color: #ffffff;
-            }
-
-            QGroupBox {
-                color: #f2f7fb;
-                background: #111c26;
-                border: 1px solid #223443;
-                border-radius: 10px;
-                margin-top: 10px;
-                font-size: 14px;
-                font-weight: 700;
-            }
-
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                left: 14px;
-                padding: 0 8px;
-                color: #f2f7fb;
-                background: #0d151f;
-            }
-
-            QFormLayout QLabel {
-                color: #91a7b6;
-                font-weight: 600;
-            }
-
-            QPushButton {
-                min-height: 28px;
-                border: 1px solid #314758;
-                border-radius: 8px;
-                padding: 5px 12px;
-                color: #e8f1f8;
-                background: #182737;
-                font-weight: 650;
-            }
-
-            QPushButton:hover {
-                background: #213547;
-                border-color: #45667a;
-            }
-
-            QPushButton:pressed {
-                background: #10202d;
-            }
-
-            QPushButton:disabled {
-                color: #647987;
-                background: #111922;
-                border-color: #1f2a34;
-            }
-
-            QPushButton[role="primary"] {
-                color: #05201d;
-                background: #72f2d3;
-                border-color: #72f2d3;
-            }
-
-            QPushButton[role="primary"]:hover {
-                background: #8dffe3;
-                border-color: #8dffe3;
-            }
-
-            QPushButton[role="danger"] {
-                color: #ffe9ec;
-                background: #4b202a;
-                border-color: #6f3441;
-            }
-
-            QPushButton[role="danger"]:hover {
-                background: #682938;
-                border-color: #965164;
-            }
-
-            QPushButton[role="secondary"] {
-                background: #142331;
-                border-color: #2e4557;
-            }
-
-            QComboBox {
-                min-height: 28px;
-                color: #eff8fd;
-                background: #0c1721;
-                border: 1px solid #2d4354;
-                border-radius: 8px;
-                padding: 4px 30px 4px 10px;
-            }
-
-            QComboBox:hover {
-                border-color: #4f788d;
-                background: #101f2c;
-            }
-
-            QComboBox::drop-down {
-                width: 28px;
-                border: none;
-            }
-
-            QComboBox::down-arrow {
-                image: none;
-                width: 0;
-                height: 0;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 6px solid #72f2d3;
-                margin-right: 10px;
-            }
-
-            QComboBox QAbstractItemView {
-                color: #eff8fd;
-                background: #111c26;
-                selection-background-color: #1f3d4c;
-                border: 1px solid #2d4354;
-                outline: 0;
-            }
-
-            QListWidget,
-            QPlainTextEdit {
-                color: #dbe9f1;
-                background: #081019;
-                border: 1px solid #223443;
-                border-radius: 10px;
-                padding: 8px;
-                selection-background-color: #1f3d4c;
-                selection-color: #ffffff;
-            }
-
-            QPlainTextEdit#logPanel {
-                font-family: "Menlo", "Consolas", monospace;
-                font-size: 12px;
-                line-height: 1.4;
-            }
-
-            QListWidget::item {
-                border-radius: 7px;
-                padding: 5px 7px;
-                margin: 2px;
-            }
-
-            QListWidget::item:selected {
-                background: #1f3d4c;
-            }
-
-            QProgressBar {
-                height: 8px;
-                border: none;
-                border-radius: 4px;
-                background: #162431;
-                color: transparent;
-            }
-
-            QProgressBar::chunk {
-                border-radius: 4px;
-                background: #72f2d3;
-            }
-
-            QSplitter::handle {
-                background: #182532;
-                margin: 4px 0;
-                border-radius: 2px;
-            }
-
-            QSplitter::handle:horizontal {
-                width: 4px;
-            }
-
-            QScrollBar:vertical {
-                background: transparent;
-                width: 10px;
-                margin: 2px;
-            }
-
-            QScrollBar::handle:vertical {
-                background: #2f4656;
-                border-radius: 5px;
-                min-height: 28px;
-            }
-
-            QScrollBar::add-line:vertical,
-            QScrollBar::sub-line:vertical {
-                height: 0;
-            }
-            """
+            "\n".join(
+                [
+                    block("QMainWindow", f"background: {c['app_bg']};"),
+                    block(
+                        "QWidget#appRoot",
+                        "\n".join(
+                            [
+                                f"background: {c['app_bg']};",
+                                f"color: {c['root_text']};",
+                                'font-family: "Inter", "SF Pro Text", "Segoe UI", sans-serif;',
+                                "font-size: 13px;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QMenuBar",
+                        "\n".join(
+                            [
+                                f"background: {c['menu_bg']};",
+                                f"color: {c['menu_text']};",
+                                "border: none;",
+                                "padding: 4px 8px;",
+                            ]
+                        ),
+                    ),
+                    block("QMenuBar::item", "border-radius: 6px;\npadding: 6px 10px;"),
+                    block("QMenuBar::item:selected", f"background: {c['menu_hover']};"),
+                    block(
+                        "QMenu",
+                        "\n".join(
+                            [
+                                f"background: {c['menu_panel']};",
+                                f"color: {c['root_text']};",
+                                f"border: 1px solid {c['menu_border']};",
+                                "border-radius: 8px;",
+                                "padding: 6px;",
+                            ]
+                        ),
+                    ),
+                    block("QMenu::item", "border-radius: 6px;\npadding: 7px 24px 7px 10px;"),
+                    block("QMenu::item:selected", f"background: {c['menu_hover']};"),
+                    block("QLabel", f"color: {c['label']};"),
+                    block(
+                        "QLabel#appTitle",
+                        "\n".join(
+                            [
+                                f"color: {c['title']};",
+                                "font-size: 24px;",
+                                "font-weight: 700;",
+                                "letter-spacing: 0;",
+                            ]
+                        ),
+                    ),
+                    block("QLabel#appSubtitle", f"color: {c['muted']};\nfont-size: 13px;"),
+                    block(
+                        "QLabel#fileLabel,\nQLabel#progressLabel",
+                        "\n".join(
+                            [
+                                f"color: {c['status_text']};",
+                                f"background: {c['status_bg']};",
+                                f"border: 1px solid {c['status_border']};",
+                                "border-radius: 8px;",
+                                "padding: 7px 10px;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QLabel#sectionTitle",
+                        f"color: {c['section_title']};\nfont-size: 15px;\nfont-weight: 700;",
+                    ),
+                    block(
+                        "QLabel#dropZone",
+                        "\n".join(
+                            [
+                                f"color: {c['drop_text']};",
+                                f"background: {c['drop_bg']};",
+                                f"border: 2px dashed {c['drop_border']};",
+                                "border-radius: 14px;",
+                                "padding: 18px;",
+                                "font-size: 18px;",
+                                "font-weight: 700;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QLabel#dropZone:hover",
+                        "\n".join(
+                            [
+                                f"background: {c['drop_hover_bg']};",
+                                f"border-color: {c['drop_hover_border']};",
+                                f"color: {c['title']};",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QGroupBox",
+                        "\n".join(
+                            [
+                                f"color: {c['group_text']};",
+                                f"background: {c['group_bg']};",
+                                f"border: 1px solid {c['group_border']};",
+                                "border-radius: 10px;",
+                                "margin-top: 10px;",
+                                "font-size: 14px;",
+                                "font-weight: 700;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QGroupBox::title",
+                        "\n".join(
+                            [
+                                "subcontrol-origin: margin;",
+                                "subcontrol-position: top left;",
+                                "left: 14px;",
+                                "padding: 0 8px;",
+                                f"color: {c['group_text']};",
+                                f"background: {c['group_title_bg']};",
+                            ]
+                        ),
+                    ),
+                    block("QFormLayout QLabel", f"color: {c['field_label']};\nfont-weight: 600;"),
+                    block(
+                        "QPushButton",
+                        "\n".join(
+                            [
+                                "min-height: 28px;",
+                                f"border: 1px solid {c['button_border']};",
+                                "border-radius: 8px;",
+                                "padding: 5px 12px;",
+                                f"color: {c['button_text']};",
+                                f"background: {c['button_bg']};",
+                                "font-weight: 650;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QPushButton:hover",
+                        f"background: {c['button_hover_bg']};\nborder-color: {c['button_hover_border']};",
+                    ),
+                    block("QPushButton:pressed", f"background: {c['button_pressed_bg']};"),
+                    block(
+                        "QPushButton:disabled",
+                        "\n".join(
+                            [
+                                f"color: {c['button_disabled_text']};",
+                                f"background: {c['button_disabled_bg']};",
+                                f"border-color: {c['button_disabled_border']};",
+                            ]
+                        ),
+                    ),
+                    block(
+                        'QPushButton[role="primary"]',
+                        "\n".join(
+                            [
+                                f"color: {c['primary_text']};",
+                                f"background: {c['primary_bg']};",
+                                f"border-color: {c['primary_border']};",
+                            ]
+                        ),
+                    ),
+                    block(
+                        'QPushButton[role="primary"]:hover',
+                        f"background: {c['primary_hover_bg']};\nborder-color: {c['primary_hover_bg']};",
+                    ),
+                    block(
+                        'QPushButton[role="danger"]',
+                        "\n".join(
+                            [
+                                f"color: {c['danger_text']};",
+                                f"background: {c['danger_bg']};",
+                                f"border-color: {c['danger_border']};",
+                            ]
+                        ),
+                    ),
+                    block(
+                        'QPushButton[role="danger"]:hover',
+                        f"background: {c['danger_hover_bg']};\nborder-color: {c['danger_hover_bg']};",
+                    ),
+                    block(
+                        'QPushButton[role="secondary"]',
+                        f"background: {c['secondary_bg']};\nborder-color: {c['secondary_border']};",
+                    ),
+                    block(
+                        "QComboBox",
+                        "\n".join(
+                            [
+                                "min-height: 28px;",
+                                f"color: {c['input_text']};",
+                                f"background: {c['input_bg']};",
+                                f"border: 1px solid {c['input_border']};",
+                                "border-radius: 8px;",
+                                "padding: 4px 30px 4px 10px;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QComboBox:hover",
+                        f"border-color: {c['input_hover_border']};\nbackground: {c['input_hover_bg']};",
+                    ),
+                    block("QComboBox::drop-down", "width: 28px;\nborder: none;"),
+                    block(
+                        "QComboBox::down-arrow",
+                        "\n".join(
+                            [
+                                "image: none;",
+                                "width: 0;",
+                                "height: 0;",
+                                "border-left: 5px solid transparent;",
+                                "border-right: 5px solid transparent;",
+                                f"border-top: 6px solid {c['arrow']};",
+                                "margin-right: 10px;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QComboBox QAbstractItemView",
+                        "\n".join(
+                            [
+                                f"color: {c['input_text']};",
+                                f"background: {c['group_bg']};",
+                                f"selection-background-color: {c['selection_bg']};",
+                                f"selection-color: {c['selection_text']};",
+                                f"border: 1px solid {c['input_border']};",
+                                "outline: 0;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QListWidget,\nQPlainTextEdit",
+                        "\n".join(
+                            [
+                                f"color: {c['list_text']};",
+                                f"background: {c['list_bg']};",
+                                f"border: 1px solid {c['list_border']};",
+                                "border-radius: 10px;",
+                                "padding: 8px;",
+                                f"selection-background-color: {c['selection_bg']};",
+                                f"selection-color: {c['selection_text']};",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QPlainTextEdit#logPanel",
+                        'font-family: "Menlo", "Consolas", monospace;\nfont-size: 12px;\nline-height: 1.4;',
+                    ),
+                    block("QListWidget::item", "border-radius: 7px;\npadding: 5px 7px;\nmargin: 2px;"),
+                    block("QListWidget::item:selected", f"background: {c['selection_bg']};"),
+                    block(
+                        "QProgressBar",
+                        "\n".join(
+                            [
+                                "height: 8px;",
+                                "border: none;",
+                                "border-radius: 4px;",
+                                f"background: {c['progress_bg']};",
+                                "color: transparent;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QProgressBar::chunk",
+                        f"border-radius: 4px;\nbackground: {c['progress_chunk']};",
+                    ),
+                    block(
+                        "QSplitter::handle",
+                        f"background: {c['splitter']};\nmargin: 4px 0;\nborder-radius: 2px;",
+                    ),
+                    block("QSplitter::handle:horizontal", "width: 4px;"),
+                    block("QScrollBar:vertical", "background: transparent;\nwidth: 10px;\nmargin: 2px;"),
+                    block(
+                        "QScrollBar::handle:vertical",
+                        f"background: {c['scrollbar']};\nborder-radius: 5px;\nmin-height: 28px;",
+                    ),
+                    block("QScrollBar::add-line:vertical,\nQScrollBar::sub-line:vertical", "height: 0;"),
+                ]
+            )
         )
 
 

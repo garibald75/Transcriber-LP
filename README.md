@@ -27,6 +27,7 @@ Offline desktop transcription app for macOS, built with PySide6 and `whisper.cpp
 - translate to English or keep original language
 - model manager with downloadable models
 - stop/cancel transcription in progress
+- switchable light/dark theme from `View > Theme`
 - runtime help manual and tooltips
 - GitHub CI for syntax + import validation
 
@@ -43,6 +44,12 @@ The source of truth is `app/version.py`. macOS bundle metadata is read from that
 ## Screenshot
 
 ![Transcriber-LP UI](docs/transcriber-lp-screenshot.svg)
+
+## Appearance
+
+The app defaults to the light theme. Use `View > Theme > Light` or `View > Theme > Dark` to switch the interface theme at runtime.
+
+The selected theme is stored in the user settings and restored on the next launch. The theme system is palette-driven in `app/ui/main_window.py`, so new themes can be added by defining another entry in `THEME_PALETTES` and exposing it through the theme menu.
 
 ## Third-party components and licenses
 
@@ -138,6 +145,6 @@ python -m unittest discover tests
 
 - The app currently targets macOS packaging and does not include Windows/Linux installers.
 - The repo is configured to keep binary artifacts out of version control.
-- The UI includes tooltips and an inline help manual for a better user experience.
+- The UI includes light/dark themes, tooltips, and an inline help manual for a better user experience.
 - The app includes `Help > Open-source licenses` and `docs/THIRD_PARTY_NOTICE.md` to cite third-party owners and licenses.
 - Release artifacts should include exact third-party license texts and provenance for bundled binaries and models.

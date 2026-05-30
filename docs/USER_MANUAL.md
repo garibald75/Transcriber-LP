@@ -26,6 +26,12 @@ For a packaged build, open `dist/Transcriber-LP.app`.
 
 Use `Stop` to cancel a running transcription.
 
+## Appearance
+
+Transcriber-LP starts with the light theme by default.
+
+Use `View > Theme > Light` or `View > Theme > Dark` to switch the interface while the app is running. The selected theme is saved in user settings and restored on the next launch.
+
 ## Models
 
 The app looks for models in this order:
