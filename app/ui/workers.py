@@ -13,6 +13,10 @@ class WorkerSignals(QObject):
     finished = Signal(object)
     progress = Signal(int, int)
     cancelled = Signal()
+    item_started = Signal(int, object)
+    item_finished = Signal(int, object)
+    item_failed = Signal(int, str)
+    batch_finished = Signal(object)
 
 
 class BaseWorker(QRunnable):
@@ -58,6 +62,51 @@ class TranscribeWorker(BaseWorker):
         output = self.transcriber.transcribe(self.options, log_cb=self.signals.log.emit)
         self.signals.log.emit(f"=== TRANSCRIBE WORKER END OK === {output}")
         self.signals.finished.emit(output)
+
+
+class BatchTranscribeWorker(BaseWorker):
+    def __init__(self, options_list: list[TranscriptionOptions]) -> None:
+        super().__init__()
+        self.options_list = options_list
+        self.transcriber = Transcriber()
+        self.cancel_requested = False
+
+    def cancel(self) -> None:
+        self.cancel_requested = True
+        self.transcriber.cancel(log_cb=self.signals.log.emit)
+
+    def execute(self) -> None:
+        results = []
+        total = len(self.options_list)
+        self.signals.log.emit(f"=== BATCH TRANSCRIBE START === {total} item(s)")
+
+        for index, options in enumerate(self.options_list):
+            if self.cancel_requested:
+                self.signals.cancelled.emit()
+                return
+
+            self.signals.item_started.emit(index, options.input_file)
+            self.signals.log.emit(f"=== BATCH ITEM {index + 1}/{total} START ===")
+            self.signals.log.emit(f"Input: {options.input_file}")
+
+            try:
+                output = self.transcriber.transcribe(options, log_cb=self.signals.log.emit)
+            except Exception as exc:
+                message = str(exc)
+                if "Operation cancelled by user." in message or "Operation cancelled before process start." in message:
+                    self.signals.cancelled.emit()
+                    return
+                self.signals.item_failed.emit(index, message)
+                self.signals.log.emit(f"=== BATCH ITEM {index + 1}/{total} FAILED === {message}")
+                results.append({"input": options.input_file, "output": None, "error": message})
+                continue
+
+            self.signals.item_finished.emit(index, output)
+            self.signals.log.emit(f"=== BATCH ITEM {index + 1}/{total} END OK === {output}")
+            results.append({"input": options.input_file, "output": output, "error": None})
+
+        self.signals.log.emit("=== BATCH TRANSCRIBE END ===")
+        self.signals.batch_finished.emit(results)
 
 
 class DownloadModelWorker(BaseWorker):

@@ -2,6 +2,13 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.3.0 - 2026-05-30
+
+- Added batch import with a queue for sequentially transcribing multiple media files.
+- Added per-item batch status logging for queued, running, completed, failed, and cancelled items.
+- Added batch output retrieval so completed queue items can be reopened in the transcript editor.
+- Added duplicate-stem output naming for batch runs to avoid overwriting files with the same base name.
+
 ## 0.2.1 - 2026-05-30
 
 - Improved window resize behavior so the media preview, transcript editor, log panel, and model list scale proportionally.

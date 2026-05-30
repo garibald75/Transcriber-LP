@@ -1,6 +1,6 @@
 # Transcriber-LP User Manual
 
-Current version: `0.2.1`
+Current version: `0.3.0`
 
 Versioning starts at `0.1.0` for the first tracked public-ready baseline. The source of truth is `app/version.py`.
 
@@ -25,6 +25,14 @@ For a packaged build, open `dist/Transcriber-LP.app`.
 7. Choose the output folder when prompted.
 
 Use `Stop` to cancel a running transcription.
+
+## Batch Import
+
+Use `Add files` in the Batch Queue to import multiple audio or video files. Click `Transcribe batch`, choose one output folder, and Transcriber-LP processes the queue sequentially with the current model, language, translation, and output format settings.
+
+Each queue item shows its status while the batch runs. Completed items keep their generated output path; select a completed item and click `Retrieve output` to load the source media in the preview player and open the generated transcript in the editor.
+
+If multiple queued files share the same base filename, batch output names include a numeric suffix to avoid overwriting earlier files.
 
 ## Review and Correct a Transcript
 
