@@ -371,6 +371,15 @@ class MainWindow(QMainWindow):
         self.output_combo.addItems(["txt", "srt", "vtt"])
         self.output_combo.setToolTip("Choose the output subtitle/text format for the transcription.")
         settings_layout.addRow("Output format", self.output_combo)
+        self.save_timestamps_checkbox = XCheckBox("Save timestamps")
+        self.save_timestamps_checkbox.setChecked(self._settings_bool("export/save_timestamps", False))
+        self.save_timestamps_checkbox.setToolTip(
+            "Also save timestamp data as a CSV sidecar, regardless of the selected output format."
+        )
+        self.save_timestamps_checkbox.toggled.connect(
+            lambda enabled: self.settings.setValue("export/save_timestamps", enabled)
+        )
+        settings_layout.addRow("Timestamp export", self.save_timestamps_checkbox)
 
         self.model_combo = QComboBox()
         self.model_combo.setToolTip("Select the transcription model. Models are loaded from the app bundle or downloaded models.")
@@ -752,6 +761,7 @@ class MainWindow(QMainWindow):
                     language=self.source_language_combo.currentData() or "auto",
                     output_format=self.output_combo.currentText(),
                     target_language=self.target_language_combo.currentData() or "as_source",
+                    save_timestamps=self.save_timestamps_checkbox.isChecked(),
                     output_name=_batch_output_name(path, index, stem_counts),
                     output_dir=output_dir,
                 )
@@ -945,6 +955,7 @@ class MainWindow(QMainWindow):
             language=self.source_language_combo.currentData() or "auto",
             output_format=self.output_combo.currentText(),
             target_language=self.target_language_combo.currentData() or "as_source",
+            save_timestamps=self.save_timestamps_checkbox.isChecked(),
             output_dir=output_dir,
         )
         self.progress.setRange(0, 0)
@@ -1166,7 +1177,8 @@ class MainWindow(QMainWindow):
             "3) Seleziona un modello disponibile. I modelli possono essere aggiornati dal pannello Model Manager.\n"
             "4) Opzionalmente imposta la lingua sorgente o lascia Auto-detect per la rilevazione automatica.\n"
             "5) Scegli se mantenere la lingua originale o tradurre in inglese.\n"
-            "6) Clicca Transcribe per avviare; usa Stop per annullare la trascrizione in corso.\n\n"
+            "6) Abilita Save timestamps se vuoi anche un file CSV con i timestamp.\n"
+            "7) Clicca Transcribe per avviare; usa Stop per annullare la trascrizione in corso.\n\n"
             "Batch:\n"
             "- Usa Add files nella Batch Queue per importare piu file.\n"
             "- Usa Transcribe batch per trascrivere la coda in sequenza nello stesso output folder.\n"

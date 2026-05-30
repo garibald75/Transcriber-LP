@@ -19,6 +19,7 @@ class TranscriptionOptions:
     output_format: str
     task: str = "transcribe"
     target_language: str = "as_source"
+    save_timestamps: bool = False
     output_name: str | None = None
     output_dir: str | None = None
 
@@ -68,6 +69,7 @@ class Transcriber:
             options.output_format,
             options.language,
             options.target_language,
+            save_timestamps=options.save_timestamps,
             executable=self.whisper_path,
         )
 
@@ -76,6 +78,10 @@ class Transcriber:
 
         output_file = out_base.with_suffix(f".{options.output_format}")
         self._verify_output_file(output_file)
+        if options.save_timestamps:
+            timestamp_file = out_base.with_suffix(".csv")
+            self._verify_output_file(timestamp_file)
+            self._log(log_cb, f"Timestamp sidecar saved: {timestamp_file}")
         self._log(log_cb, f"=== TRANSCRIBER END OK === {output_file}")
         return output_file
 
