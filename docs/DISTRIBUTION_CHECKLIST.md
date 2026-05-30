@@ -1,6 +1,6 @@
 # Distribution Checklist
 
-Use this checklist before publishing a release artifact.
+Use this checklist before publishing a release artifact. It is intentionally stricter than the requirements for maintaining the source repository.
 
 - Confirm `git status` is clean.
 - Confirm CI is green on `main`.
@@ -10,6 +10,9 @@ Use this checklist before publishing a release artifact.
 - Confirm `docs/THIRD_PARTY_NOTICE.md` is current.
 - Confirm bundled `ffmpeg`/`ffprobe` provenance is recorded in `docs/FFMPEG_BUILD.md`.
 - Confirm bundled model provenance is recorded in `docs/MODEL_PROVENANCE.md`.
+- Confirm `whisper-cli` and all required `@rpath` `.dylib` files are bundled.
 - Confirm exact third-party license texts are included with any packaged app bundle.
+- Confirm the FFmpeg build license classification is compatible with the intended distribution model.
 - Confirm the packaged app was smoke-tested on the target macOS architecture.
+- Confirm `codesign --verify --deep --strict --verbose=2 dist/Transcriber-LP.app` passes from a non-cloud-synced release directory.
 - Create a signed Git tag such as `v0.1.0` when the release is final.

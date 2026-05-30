@@ -6,30 +6,31 @@
 
 Current version: `0.1.0`
 
-Offline desktop transcription app for macOS, built with PySide6 and `whisper.cpp`.
+Offline desktop transcription app for macOS, built with PySide6, PyInstaller, FFmpeg, and `whisper.cpp`.
 
 ## What this project is
 
-- Desktop UI: PySide6
-- Packaging: PyInstaller
-- Speech engine: `whisper.cpp` CLI
-- Audio extraction: `ffmpeg`
-- Default bundled model: `ggml-base.bin`
-- Optional downloadable models stored outside the app bundle
-- No server required, offline-capable transcription
+- Desktop UI built with PySide6.
+- Local transcription through the `whisper.cpp` CLI.
+- Audio extraction through `ffmpeg`.
+- macOS packaging through PyInstaller.
+- Optional model downloads stored in the user's Application Support directory.
+- Offline-capable workflow with no server requirement.
+
+The repository intentionally does not commit runtime binaries, model weights, virtual environments, or build products. Packaging inputs must be supplied locally under `third_party/macos/` and documented before any release artifact is distributed.
 
 ## Features
 
 - drag & drop media input
 - file browser selection
 - output formats: `txt`, `srt`, `vtt`
-- choose source language or auto-detect
-- translate to English or keep original language
-- model manager with downloadable models
-- stop/cancel transcription in progress
-- switchable light/dark theme from `View > Theme`
-- runtime help manual and tooltips
-- GitHub CI for syntax + import validation
+- source language selection or auto-detect
+- translate to English or keep the source language
+- model manager with checksum-gated downloads
+- stop/cancel for running jobs
+- light/dark theme switch from `View > Theme`
+- runtime help manual and open-source notice dialog
+- GitHub CI for syntax and unit-test validation
 
 ## Versioning
 
@@ -59,7 +60,7 @@ The selected theme is stored in the user settings and restored on the next launc
 - `requests`: Apache License 2.0.
 - Models (for example `ggml-base.bin`): may have separate licensing and distribution requirements.
 
-This repository avoids committing binary distributions and model weights. Runtime binaries are supplied from `third_party/macos/` before packaging, and should only be added when their licenses are compatible with your distribution plan.
+This repository avoids committing binary distributions and model weights. Runtime binaries are supplied from `third_party/macos/` before packaging, and should only be added when their licenses are compatible with the distribution plan.
 
 Transcriber-LP source code is licensed under the MIT License. See `LICENSE`.
 Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_PROVENANCE.md`, and `docs/DISTRIBUTION_CHECKLIST.md`.
@@ -73,7 +74,7 @@ Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_P
 - `docs/THIRD_PARTY_NOTICE.md` open-source owners, licenses, and redistribution policy
 - `docs/DISTRIBUTION_CHECKLIST.md` release readiness checklist
 - `scripts/` packaging and helper scripts
-- `third_party/macos/` required runtime binaries before packaging
+- `third_party/macos/` local packaging inputs; only `.gitkeep` is tracked
 - `.github/workflows/` CI pipeline
 
 ## Quick start
@@ -97,14 +98,24 @@ pip install -r requirements.txt
 python -m app.main
 ```
 
-## macOS M1 build
+## macOS Apple Silicon Build
 
-Ensure these files are present before building:
+The packaging target is Apple Silicon (`arm64`). Ensure these files are present before building:
 
 - `third_party/macos/ffmpeg`
 - `third_party/macos/ffprobe`
 - `third_party/macos/whisper-cli`
+- any `@rpath` `.dylib` dependencies reported by `otool -L third_party/macos/whisper-cli`
 - `third_party/macos/models/ggml-base.bin`
+
+Helper scripts:
+
+```bash
+bash scripts/build_whisper_cli.sh
+bash scripts/download_default_model.sh
+```
+
+`ffmpeg` and `ffprobe` must be supplied from a license-compatible macOS arm64 build and recorded in `docs/FFMPEG_BUILD.md`.
 
 Then run:
 
@@ -113,6 +124,12 @@ bash scripts/build_macos.sh
 ```
 
 The application bundle is created in `dist/Transcriber-LP.app`.
+
+If the bundle is prepared for distribution, build or export it outside cloud-synced folders such as OneDrive and run:
+
+```bash
+codesign --verify --deep --strict --verbose=2 dist/Transcriber-LP.app
+```
 
 ## Intel / universal build
 
@@ -135,6 +152,15 @@ Run tests locally with:
 python -m unittest discover tests
 ```
 
+For the same checks as CI, also run:
+
+```bash
+find app -name '*.py' | sort | xargs python -m py_compile
+python -m unittest discover tests
+```
+
+If the checkout is inside a cloud-synced folder and Python cannot write its cache files, set `PYTHONPYCACHEPREFIX` to a local temporary directory before running `py_compile`.
+
 ## Runtime paths
 
 - downloaded models: `~/Library/Application Support/Transcriber-LP/models`
@@ -145,6 +171,6 @@ python -m unittest discover tests
 
 - The app currently targets macOS packaging and does not include Windows/Linux installers.
 - The repo is configured to keep binary artifacts out of version control.
-- The UI includes light/dark themes, tooltips, and an inline help manual for a better user experience.
+- The UI includes light/dark themes, tooltips, and inline help.
 - The app includes `Help > Open-source licenses` and `docs/THIRD_PARTY_NOTICE.md` to cite third-party owners and licenses.
 - Release artifacts should include exact third-party license texts and provenance for bundled binaries and models.

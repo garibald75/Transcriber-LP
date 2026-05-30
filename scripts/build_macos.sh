@@ -19,18 +19,15 @@ if [[ ! -f "third_party/macos/whisper-cli" ]]; then
   exit 1
 fi
 
-for dylib in \
-  libwhisper.1.dylib \
-  libggml.0.dylib \
-  libggml-base.0.dylib \
-  libggml-cpu.0.dylib \
-  libggml-blas.0.dylib
-do
-  if [[ ! -e "third_party/macos/$dylib" ]]; then
-    echo "Missing third_party/macos/$dylib"
-    exit 1
-  fi
-done
+if command -v otool >/dev/null 2>&1; then
+  while IFS= read -r dep; do
+    dylib="$(basename "$dep")"
+    if [[ ! -e "third_party/macos/$dylib" ]]; then
+      echo "Missing third_party/macos/$dylib, required by whisper-cli"
+      exit 1
+    fi
+  done < <(otool -L third_party/macos/whisper-cli | awk '/@rpath/ {print $1}')
+fi
 
 if [[ ! -f "third_party/macos/models/ggml-base.bin" ]]; then
   echo "Missing third_party/macos/models/ggml-base.bin"
@@ -80,6 +77,6 @@ python -m PyInstaller \
   --clean \
   Transcriber-LP.spec
 
-find dist/Transcriber-LP.app -xattrname com.apple.FinderInfo -exec xattr -d com.apple.FinderInfo {} +
+find dist/Transcriber-LP.app -xattrname com.apple.FinderInfo -exec xattr -d com.apple.FinderInfo {} + 2>/dev/null || true
 
 echo "Built dist/Transcriber-LP.app"
