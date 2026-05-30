@@ -1079,6 +1079,25 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Missing transcript", "Open a transcript before saving.")
             return
 
+        confirmation = QMessageBox(self)
+        confirmation.setIcon(QMessageBox.Icon.Warning)
+        confirmation.setWindowTitle("Overwrite transcript?")
+        confirmation.setText("Save changes will overwrite the existing transcript file.")
+        confirmation.setInformativeText(
+            f"{self.current_transcript_path}\n\nDo you want to continue?"
+        )
+        overwrite_button = confirmation.addButton(
+            "Overwrite",
+            QMessageBox.ButtonRole.AcceptRole,
+        )
+        confirmation.addButton(QMessageBox.StandardButton.Cancel)
+        confirmation.setDefaultButton(QMessageBox.StandardButton.Cancel)
+        confirmation.exec()
+
+        if confirmation.clickedButton() != overwrite_button:
+            self.append_log("Transcript save cancelled.")
+            return
+
         try:
             self.current_transcript_path.write_text(self.transcript_editor.toPlainText(), encoding="utf-8")
         except Exception as exc:
@@ -1186,7 +1205,7 @@ class MainWindow(QMainWindow):
             "Review:\n"
             "- Il file sorgente selezionato viene caricato nel player di anteprima.\n"
             "- Quando la trascrizione finisce, il file generato si apre nel Transcript Editor.\n"
-            "- Correggi il testo e usa Save changes per salvare sullo stesso file.\n"
+            "- Correggi il testo e usa Save changes per salvare sullo stesso file dopo conferma.\n"
             "- Usa Open transcript per aprire una trascrizione esistente.\n\n"
             "Appearance:\n"
             "- Usa View > Theme per passare tra tema chiaro e tema scuro.\n"

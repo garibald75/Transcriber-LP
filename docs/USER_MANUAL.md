@@ -1,6 +1,6 @@
 # Transcriber-LP User Manual
 
-Current version: `0.3.1`
+Current version: `0.3.2`
 
 Versioning starts at `0.1.0` for the first tracked public-ready baseline. The source of truth is `app/version.py`.
 
@@ -45,7 +45,7 @@ The timestamp sidecar is saved next to the main transcript and uses the same bas
 
 When a media file is selected, the right side of the app loads it in the media preview player. Use `Play`, `Stop`, and the seek slider to review the source audio or video while checking the generated text.
 
-When a transcription completes, the generated `txt`, `srt`, or `vtt` file opens automatically in the transcript editor. Correct the text directly and click `Save changes` to write the edits back to the same file.
+When a transcription completes, the generated `txt`, `srt`, or `vtt` file opens automatically in the transcript editor. Correct the text directly and click `Save changes`; confirm the overwrite dialog to write the edits back to the same file.
 
 Use `Open transcript` to load an existing transcript manually.
 

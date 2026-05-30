@@ -2,6 +2,10 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.3.2 - 2026-05-30
+
+- Added an overwrite confirmation dialog before saving edited transcript changes back to an existing file.
+
 ## 0.3.1 - 2026-05-30
 
 - Added an export setting to save timestamp data as a CSV sidecar independent of the selected transcript format.
