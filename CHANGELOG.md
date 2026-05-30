@@ -2,6 +2,12 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.3 - 2026-05-30
+
+- Fixed Settings dropdown arrows by replacing the fragile QSS triangle with a packaged chevron asset.
+- Made dropdown popup hover reliable by selecting the row under the pointer.
+- Improved model download button readability with a two-column layout and shorter labels.
+
 ## 0.4.2 - 2026-05-30
 
 - Unified dropdown controls with shared atomic design tokens for height, spacing, hover, and popup item sizing.
