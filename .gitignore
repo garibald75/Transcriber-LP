@@ -1,22 +1,70 @@
+# macOS / cloud-sync metadata
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.fseventsd/
+.Spotlight-V100/
+.TemporaryItems/
+.Trashes/
+.VolumeIcon.icns
+
+# Python caches and test output
 __pycache__/
 *.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
+# Virtual environments
 .venv/
 .venv*/
+venv/
+env/
+
+# Local configuration and secrets
+.env
+.env.*
+*.local
+
+# Build and packaging output
 build/
 dist/
+*.egg-info/
+*.manifest
+*.spec.bak*
 build.log
 cleanup__report.txt
 app/assets/transcriber_icon.icns
 
+# Local cleanup/backup artifacts
 .cleanup__backup/
 .cleanup_benny_backup/
-
+*.bak
 *.bak.*
+*.fixbak
 *.fixbak.*
 
-third_party/macos/*
+# Runtime binaries, models, and generated third-party trees
+third_party/**
+!third_party/
+!third_party/macos/
 !third_party/macos/.gitkeep
-
 whisper.cpp/
+*.gguf
+*.bin
+*.dylib
+*.so
+*.dll
+*.exe
+*.app
+
+# Editor metadata
+.vscode/
+.idea/
+*.swp
+*.swo
