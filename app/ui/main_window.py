@@ -13,7 +13,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFileDialog,
-    QFormLayout,
     QFrame,
     QGridLayout,
     QGroupBox,
@@ -186,7 +185,7 @@ DESIGN_TOKENS = {
         "combo_min_width": 190,
         "combo_popup_item_height": 34,
         "combo_popup_padding": 8,
-        "settings_label_height": 48,
+        "settings_label_height": 18,
         "model_download_min_width": 96,
     },
 }
@@ -257,6 +256,7 @@ class DesignComboBox(QComboBox):
         self.empty_click_handler = None
         self._popup_frame = None
         self._popup_list = None
+        self._popup_open = False
 
     def mousePressEvent(self, event) -> None:
         if self.currentData() is None and self.empty_click_handler is not None:
@@ -288,11 +288,21 @@ class DesignComboBox(QComboBox):
         frame.move(self.mapToGlobal(self.rect().bottomLeft()))
         frame.show()
         frame.raise_()
+        self._popup_open = True
+        self.update()
 
     def hidePopup(self) -> None:
         if self._popup_frame is not None:
             self._popup_frame.hide()
+        self._popup_open = False
+        self.update()
         super().hidePopup()
+
+    def eventFilter(self, watched, event) -> bool:
+        if watched is self._popup_frame and event.type() == QEvent.Type.Hide:
+            self._popup_open = False
+            self.update()
+        return super().eventFilter(watched, event)
 
     def _ensure_popup_frame(self) -> QFrame:
         if self._popup_frame is not None and self._popup_list is not None:
@@ -305,6 +315,7 @@ class DesignComboBox(QComboBox):
         frame.setMidLineWidth(0)
         frame.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         frame.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        frame.installEventFilter(self)
         layout = QVBoxLayout(frame)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -341,8 +352,12 @@ class DesignComboBox(QComboBox):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(QPen(color, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-        painter.drawLine(start_x, center_y - 2, start_x + 5, center_y + 3)
-        painter.drawLine(start_x + 5, center_y + 3, start_x + 10, center_y - 2)
+        if self._popup_open:
+            painter.drawLine(start_x, center_y + 2, start_x + 5, center_y - 3)
+            painter.drawLine(start_x + 5, center_y - 3, start_x + 10, center_y + 2)
+        else:
+            painter.drawLine(start_x, center_y - 2, start_x + 5, center_y + 3)
+            painter.drawLine(start_x + 5, center_y + 3, start_x + 10, center_y - 2)
 
 
 class XCheckBox(QCheckBox):
@@ -544,23 +559,27 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(batch_box, stretch=2)
 
         settings_box = QGroupBox("⚙ Settings")
-        settings_layout = QFormLayout(settings_box)
+        settings_layout = QVBoxLayout(settings_box)
         settings_layout.setContentsMargins(16, 20, 16, 14)
-        settings_layout.setHorizontalSpacing(14)
-        settings_layout.setVerticalSpacing(10)
-        settings_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        settings_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        settings_layout.setSpacing(12)
 
         def settings_label(text: str) -> QLabel:
             label = QLabel(text)
             label.setProperty("role", "settingsLabel")
             label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             label.setMinimumHeight(DESIGN_TOKENS["control"]["settings_label_height"])
-            label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             return label
 
         def add_settings_row(text: str, field: QWidget) -> None:
-            settings_layout.addRow(settings_label(text), field)
+            field_group = QWidget()
+            field_group.setObjectName("settingsFieldGroup")
+            field_group_layout = QVBoxLayout(field_group)
+            field_group_layout.setContentsMargins(0, 0, 0, 0)
+            field_group_layout.setSpacing(6)
+            field_group_layout.addWidget(settings_label(text))
+            field_group_layout.addWidget(field)
+            settings_layout.addWidget(field_group)
 
         self.output_combo = DesignComboBox()
         self.output_combo.addItems(["txt", "srt", "vtt"])
@@ -1683,7 +1702,15 @@ class MainWindow(QMainWindow):
                             ]
                         ),
                     ),
-                    block("QFormLayout QLabel", f"color: {c['field_label']};\nfont-weight: 600;"),
+                    block(
+                        'QLabel[role="settingsLabel"]',
+                        "\n".join(
+                            [
+                                f"color: {c['field_label']};",
+                                "font-weight: 700;",
+                            ]
+                        ),
+                    ),
                     block(
                         "QPushButton",
                         "\n".join(
