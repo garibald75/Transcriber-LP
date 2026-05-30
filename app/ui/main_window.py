@@ -249,6 +249,24 @@ class ComboItemDelegate(QStyledItemDelegate):
 
 
 class DesignComboBox(QComboBox):
+    def showPopup(self) -> None:
+        view = self.view()
+        view.setWindowFlags(
+            Qt.WindowType.Popup
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.NoDropShadowWindowHint
+        )
+        view.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        view.setFrameShape(QFrame.Shape.NoFrame)
+        view.setLineWidth(0)
+        view.setMidLineWidth(0)
+        super().showPopup()
+
+        popup = view.window()
+        popup.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
+        popup.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
+        popup.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
     def paintEvent(self, event) -> None:
         super().paintEvent(event)
 
@@ -460,7 +478,7 @@ class MainWindow(QMainWindow):
         settings_layout.setContentsMargins(16, 20, 16, 14)
         settings_layout.setHorizontalSpacing(14)
         settings_layout.setVerticalSpacing(10)
-        settings_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        settings_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         settings_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
 
         self.output_combo = DesignComboBox()
@@ -1344,12 +1362,20 @@ class MainWindow(QMainWindow):
         combo.setMinimumWidth(control["combo_min_width"])
         combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         combo.setMaxVisibleItems(10)
+        combo.setFrame(False)
         combo.view().setCursor(Qt.CursorShape.PointingHandCursor)
         combo.view().setMouseTracking(True)
         combo.view().viewport().setMouseTracking(True)
         combo.view().viewport().setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        combo.view().setWindowFlags(
+            Qt.WindowType.Popup
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.NoDropShadowWindowHint
+        )
+        combo.view().setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         combo.view().setFrameShape(QFrame.Shape.NoFrame)
         combo.view().setLineWidth(0)
+        combo.view().setMidLineWidth(0)
         combo.view().setUniformItemSizes(True)
         combo.view().setMinimumWidth(control["combo_min_width"])
         combo.view().entered.connect(combo.view().setCurrentIndex)
@@ -1628,7 +1654,7 @@ class MainWindow(QMainWindow):
                                 f"min-height: {control['min_height']}px;",
                                 f"color: {c['input_text']};",
                                 f"background: {c['input_bg']};",
-                                "border: 1px solid transparent;",
+                                f"border: 1px solid {c['input_border']};",
                                 f"border-radius: {radius['control']}px;",
                                 (
                                     f"padding: 6px {control['combo_arrow_width']}px "
@@ -1640,7 +1666,7 @@ class MainWindow(QMainWindow):
                     ),
                     block(
                         "QComboBox:hover",
-                        f"border-color: {c['primary_border']};\nbackground: {c['input_hover_bg']};",
+                        f"border-color: {c['input_hover_border']};\nbackground: {c['input_hover_bg']};",
                     ),
                     block(
                         "QComboBox:focus",

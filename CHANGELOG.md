@@ -2,6 +2,12 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.7 - 2026-05-31
+
+- Restored normal closed-state borders on Settings dropdown controls.
+- Removed the native frame from open dropdown popups.
+- Aligned Settings form labels consistently from the left while keeping vertical centering.
+
 ## 0.4.6 - 2026-05-30
 
 - Simplified the macOS app icon to a microphone with a compact wave mark.
