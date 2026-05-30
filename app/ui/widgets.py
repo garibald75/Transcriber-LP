@@ -14,7 +14,7 @@ class DropLabel(QLabel):
         self.setObjectName("dropZone")
         self.setAlignment(Qt.AlignCenter)
         self.setAcceptDrops(True)
-        self.setMinimumHeight(112)
+        self.setMinimumHeight(82)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasUrls():

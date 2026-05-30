@@ -1,6 +1,6 @@
 # Transcriber-LP User Manual
 
-Current version: `0.2.0`
+Current version: `0.2.1`
 
 Versioning starts at `0.1.0` for the first tracked public-ready baseline. The source of truth is `app/version.py`.
 

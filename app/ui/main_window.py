@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QPlainTextEdit,
     QProgressBar,
+    QSizePolicy,
     QSlider,
     QSplitter,
     QVBoxLayout,
@@ -270,17 +271,21 @@ class MainWindow(QMainWindow):
 
         splitter = QSplitter()
         splitter.setObjectName("mainSplitter")
-        root.addWidget(splitter)
+        splitter.setChildrenCollapsible(False)
+        root.addWidget(splitter, stretch=1)
         self.setCentralWidget(central)
 
         left = QWidget()
+        left.setMinimumWidth(360)
+        left.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(0, 0, 14, 0)
         left_layout.setSpacing(9)
 
         self.drop_zone = DropLabel(self.set_selected_file)
+        self.drop_zone.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
         self.drop_zone.setToolTip("Drag and drop a media file here, or click Browse to select one.")
-        left_layout.addWidget(self.drop_zone)
+        left_layout.addWidget(self.drop_zone, stretch=1)
 
         browse_btn = QPushButton("Browse file…")
         browse_btn.setObjectName("browseButton")
@@ -364,10 +369,10 @@ class MainWindow(QMainWindow):
         model_layout.setContentsMargins(16, 20, 16, 14)
         model_layout.setSpacing(8)
         self.model_list = QListWidget()
-        self.model_list.setMinimumHeight(76)
-        self.model_list.setMaximumHeight(94)
+        self.model_list.setMinimumHeight(64)
+        self.model_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.model_list.setToolTip("Installed and bundled models available for transcription.")
-        model_layout.addWidget(self.model_list)
+        model_layout.addWidget(self.model_list, stretch=1)
 
         dl_row = QHBoxLayout()
         dl_row.setSpacing(8)
@@ -418,22 +423,27 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.progress_label)
 
         right = QWidget()
+        right.setMinimumWidth(520)
+        right.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(14, 0, 0, 0)
         right_layout.setSpacing(8)
 
         review_splitter = QSplitter(Qt.Orientation.Vertical)
         review_splitter.setObjectName("reviewSplitter")
-        right_layout.addWidget(review_splitter)
+        review_splitter.setChildrenCollapsible(False)
+        right_layout.addWidget(review_splitter, stretch=1)
 
         media_box = QGroupBox("Media Preview")
+        media_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         media_layout = QVBoxLayout(media_box)
         media_layout.setContentsMargins(16, 20, 16, 14)
         media_layout.setSpacing(8)
         self.video_widget = QVideoWidget()
         self.video_widget.setObjectName("videoPreview")
-        self.video_widget.setMinimumHeight(180)
-        media_layout.addWidget(self.video_widget)
+        self.video_widget.setMinimumHeight(100)
+        self.video_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        media_layout.addWidget(self.video_widget, stretch=1)
 
         player_row = QHBoxLayout()
         player_row.setSpacing(8)
@@ -480,6 +490,7 @@ class MainWindow(QMainWindow):
         self.media_player.errorOccurred.connect(self.on_media_error)
 
         editor_box = QGroupBox("Transcript Editor")
+        editor_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         editor_layout = QVBoxLayout(editor_box)
         editor_layout.setContentsMargins(16, 20, 16, 14)
         editor_layout.setSpacing(8)
@@ -510,11 +521,14 @@ class MainWindow(QMainWindow):
         self.transcript_editor.setObjectName("transcriptEditor")
         self.transcript_editor.setPlaceholderText("Completed transcripts open here for quick correction.")
         self.transcript_editor.setEnabled(False)
+        self.transcript_editor.setMinimumHeight(90)
+        self.transcript_editor.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.transcript_editor.setToolTip("Edit the generated txt, srt, or vtt transcript.")
-        editor_layout.addWidget(self.transcript_editor)
+        editor_layout.addWidget(self.transcript_editor, stretch=1)
         review_splitter.addWidget(editor_box)
 
         log_panel = QWidget()
+        log_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         log_panel_layout = QVBoxLayout(log_panel)
         log_panel_layout.setContentsMargins(0, 0, 0, 0)
         log_panel_layout.setSpacing(8)
@@ -533,14 +547,21 @@ class MainWindow(QMainWindow):
         self.log = QPlainTextEdit()
         self.log.setObjectName("logPanel")
         self.log.setReadOnly(True)
+        self.log.setMinimumHeight(70)
+        self.log.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.log.setToolTip("Detailed log output from transcription and downloads.")
-        log_panel_layout.addWidget(self.log)
+        log_panel_layout.addWidget(self.log, stretch=1)
         review_splitter.addWidget(log_panel)
         review_splitter.setSizes([230, 260, 170])
+        review_splitter.setStretchFactor(0, 3)
+        review_splitter.setStretchFactor(1, 4)
+        review_splitter.setStretchFactor(2, 2)
 
         splitter.addWidget(left)
         splitter.addWidget(right)
         splitter.setSizes([540, 780])
+        splitter.setStretchFactor(0, 2)
+        splitter.setStretchFactor(1, 3)
         self.set_theme(self.theme_name, persist=False)
 
     def set_selected_file(self, path: Path) -> None:
