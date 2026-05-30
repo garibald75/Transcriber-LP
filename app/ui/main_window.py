@@ -250,12 +250,69 @@ class ComboItemDelegate(QStyledItemDelegate):
         super().paint(painter, opt, index)
 
 
+class ComboPopupListDelegate(QStyledItemDelegate):
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.hover_bg = "#c8eadf"
+        self.hover_text = "#102131"
+        self.text = "#142536"
+        self.check = "#0aa37f"
+
+    def set_colors(self, *, hover_bg: str, hover_text: str, text: str, check: str) -> None:
+        self.hover_bg = hover_bg
+        self.hover_text = hover_text
+        self.text = text
+        self.check = check
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index) -> None:
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        is_hovered = bool(opt.state & QStyle.StateFlag.State_MouseOver)
+        is_current = bool(index.data(Qt.ItemDataRole.UserRole + 1))
+
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+
+        item_rect = opt.rect.adjusted(4, 3, -4, -3)
+        if is_hovered:
+            painter.setBrush(QColor(self.hover_bg))
+            painter.drawRoundedRect(item_rect, 8, 8)
+
+        painter.setPen(QColor(self.hover_text if is_hovered else self.text))
+        text_rect = opt.rect.adjusted(16, 0, -44, 0)
+        painter.drawText(text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, opt.text)
+
+        if is_current:
+            center_y = opt.rect.center().y()
+            start_x = opt.rect.right() - 28
+            painter.setPen(
+                QPen(
+                    QColor(self.check),
+                    2,
+                    Qt.PenStyle.SolidLine,
+                    Qt.PenCapStyle.RoundCap,
+                    Qt.PenJoinStyle.RoundJoin,
+                )
+            )
+            painter.drawLine(start_x, center_y, start_x + 5, center_y + 5)
+            painter.drawLine(start_x + 5, center_y + 5, start_x + 14, center_y - 5)
+
+        painter.restore()
+
+    def sizeHint(self, option: QStyleOptionViewItem, index):
+        size = super().sizeHint(option, index)
+        size.setHeight(DESIGN_TOKENS["control"]["combo_popup_item_height"] + 14)
+        return size
+
+
 class DesignComboBox(QComboBox):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.empty_click_handler = None
         self._popup_frame = None
         self._popup_list = None
+        self._popup_delegate = None
         self._popup_open = False
 
     def mousePressEvent(self, event) -> None:
@@ -274,12 +331,13 @@ class DesignComboBox(QComboBox):
         frame = self._ensure_popup_frame()
         popup_list = self._popup_list
         popup_list.clear()
+        current_index = self.currentIndex()
         for row in range(self.count()):
             item = QListWidgetItem(self.itemText(row))
             item.setData(Qt.ItemDataRole.UserRole, row)
+            item.setData(Qt.ItemDataRole.UserRole + 1, row == current_index)
             popup_list.addItem(item)
-
-        popup_list.setCurrentRow(max(0, self.currentIndex()))
+        popup_list.clearSelection()
         item_height = DESIGN_TOKENS["control"]["combo_popup_item_height"] + 14
         visible_rows = min(self.count(), self.maxVisibleItems())
         popup_height = max(1, visible_rows) * item_height + DESIGN_TOKENS["control"]["combo_popup_padding"] * 2
@@ -327,12 +385,19 @@ class DesignComboBox(QComboBox):
         popup_list.setMidLineWidth(0)
         popup_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         popup_list.setMouseTracking(True)
+        popup_list.viewport().setMouseTracking(True)
+        popup_list.viewport().setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        popup_list.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         popup_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        popup_list.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
+        popup_delegate = ComboPopupListDelegate(popup_list)
+        popup_list.setItemDelegate(popup_delegate)
         popup_list.itemClicked.connect(self._select_popup_item)
         layout.addWidget(popup_list)
 
         self._popup_frame = frame
         self._popup_list = popup_list
+        self._popup_delegate = popup_delegate
         return frame
 
     def _select_popup_item(self, item: QListWidgetItem) -> None:
@@ -586,6 +651,8 @@ class MainWindow(QMainWindow):
         self.output_combo.setToolTip("Choose the output subtitle/text format for the transcription.")
         add_settings_row("Output format", self.output_combo)
         self.save_timestamps_checkbox = XCheckBox("Save timestamps")
+        self.save_timestamps_checkbox.setMinimumHeight(DESIGN_TOKENS["control"]["min_height"])
+        self.save_timestamps_checkbox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.save_timestamps_checkbox.setChecked(self._settings_bool("export/save_timestamps", False))
         self.save_timestamps_checkbox.setToolTip(
             "Also save timestamp data as a CSV sidecar, regardless of the selected output format."
@@ -1570,6 +1637,16 @@ class MainWindow(QMainWindow):
                     text=colors["input_text"],
                 )
                 combo.view().viewport().update()
+            popup_delegate = getattr(combo, "_popup_delegate", None)
+            if isinstance(popup_delegate, ComboPopupListDelegate):
+                popup_delegate.set_colors(
+                    hover_bg=colors["list_hover_bg"],
+                    hover_text=colors["list_hover_text"],
+                    text=colors["input_text"],
+                    check=colors["arrow"],
+                )
+                if getattr(combo, "_popup_list", None) is not None:
+                    combo._popup_list.viewport().update()
 
     def _apply_theme(self) -> None:
         c = THEME_PALETTES[self.theme_name]
@@ -1962,7 +2039,16 @@ class MainWindow(QMainWindow):
                             ]
                         ),
                     ),
-                    block("QFrame#comboPopupFrame", "background: transparent;\nborder: none;"),
+                    block(
+                        "QFrame#comboPopupFrame",
+                        "\n".join(
+                            [
+                                f"background: {c['group_bg']};",
+                                "border: none;",
+                                f"border-radius: {radius['menu']}px;",
+                            ]
+                        ),
+                    ),
                     block(
                         "QListWidget#comboPopupList",
                         "\n".join(
@@ -1995,7 +2081,7 @@ class MainWindow(QMainWindow):
                     ),
                     block(
                         "QListWidget#comboPopupList::item:selected",
-                        f"background: {c['list_hover_bg']};\ncolor: {c['list_hover_text']};",
+                        "background: transparent;",
                     ),
                     block(
                         "QProgressBar",
