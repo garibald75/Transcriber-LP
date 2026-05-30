@@ -8,6 +8,7 @@ from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QPain
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -1065,6 +1066,11 @@ class MainWindow(QMainWindow):
 
         self.model_settings_list = QListWidget()
         self.model_settings_list.setMinimumHeight(86)
+        self.model_settings_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.model_settings_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.model_settings_list.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        self.model_settings_list.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self.model_settings_list.setWordWrap(False)
         self.model_settings_list.setToolTip("Installed and bundled models available for transcription.")
         model_layout.addWidget(self.model_settings_list)
 
@@ -1127,12 +1133,17 @@ class MainWindow(QMainWindow):
         self.model_settings_list.clear()
         items = self.model_manager.available_models()
         if not items:
-            self.model_settings_list.addItem("No model installed")
+            item = QListWidgetItem("No model installed")
+            item.setToolTip("No model installed")
+            self.model_settings_list.addItem(item)
             return
 
         for key, path, source in items:
             display = MODEL_DEFS.get(key).label if key in MODEL_DEFS else key
-            self.model_settings_list.addItem(QListWidgetItem(f"{display} - {source} - {path.name}"))
+            text = f"{display} - {source} - {path.name}"
+            item = QListWidgetItem(text)
+            item.setToolTip(text)
+            self.model_settings_list.addItem(item)
 
     def ensure_default_model_available(self, force: bool = False) -> None:
         if self.current_model_key() is not None or self.current_worker is not None:
