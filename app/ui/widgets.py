@@ -9,14 +9,12 @@ from PySide6.QtGui import QDragEnterEvent, QDropEvent
 
 class DropLabel(QLabel):
     def __init__(self, on_file_picked) -> None:
-        super().__init__("Drop video/audio here or click Browse")
+        super().__init__("Drop audio or video")
         self.on_file_picked = on_file_picked
+        self.setObjectName("dropZone")
         self.setAlignment(Qt.AlignCenter)
         self.setAcceptDrops(True)
-        self.setMinimumHeight(120)
-        self.setStyleSheet(
-            "border: 2px dashed #888; border-radius: 12px; padding: 16px; font-size: 16px;"
-        )
+        self.setMinimumHeight(156)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasUrls():
