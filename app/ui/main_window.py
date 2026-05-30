@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(f"Transcriber-LP {APP_VERSION}")
-        self.resize(1080, 720)
+        self.resize(1320, 640)
         self.thread_pool = QThreadPool.globalInstance()
         self.model_manager = ModelManager()
         self.selected_file: Path | None = None
@@ -65,8 +65,8 @@ class MainWindow(QMainWindow):
         central = QWidget()
         central.setObjectName("appRoot")
         root = QVBoxLayout(central)
-        root.setContentsMargins(28, 24, 28, 24)
-        root.setSpacing(18)
+        root.setContentsMargins(22, 16, 22, 16)
+        root.setSpacing(10)
 
         header = QWidget()
         header.setObjectName("header")
@@ -89,8 +89,8 @@ class MainWindow(QMainWindow):
 
         left = QWidget()
         left_layout = QVBoxLayout(left)
-        left_layout.setContentsMargins(0, 0, 16, 0)
-        left_layout.setSpacing(14)
+        left_layout.setContentsMargins(0, 0, 14, 0)
+        left_layout.setSpacing(9)
 
         self.drop_zone = DropLabel(self.set_selected_file)
         self.drop_zone.setToolTip("Drag and drop a media file here, or click Browse to select one.")
@@ -109,9 +109,9 @@ class MainWindow(QMainWindow):
 
         settings_box = QGroupBox("Transcription")
         settings_layout = QFormLayout(settings_box)
-        settings_layout.setContentsMargins(18, 26, 18, 18)
-        settings_layout.setHorizontalSpacing(16)
-        settings_layout.setVerticalSpacing(12)
+        settings_layout.setContentsMargins(16, 20, 16, 14)
+        settings_layout.setHorizontalSpacing(14)
+        settings_layout.setVerticalSpacing(8)
         settings_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
 
         self.output_combo = QComboBox()
@@ -142,7 +142,7 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(settings_box)
 
         button_row = QHBoxLayout()
-        button_row.setSpacing(10)
+        button_row.setSpacing(8)
         self.transcribe_btn = QPushButton("Transcribe")
         self.transcribe_btn.setProperty("role", "primary")
         self.transcribe_btn.clicked.connect(self.start_transcription)
@@ -165,14 +165,16 @@ class MainWindow(QMainWindow):
 
         model_box = QGroupBox("Model Manager")
         model_layout = QVBoxLayout(model_box)
-        model_layout.setContentsMargins(18, 28, 18, 18)
-        model_layout.setSpacing(12)
+        model_layout.setContentsMargins(16, 20, 16, 14)
+        model_layout.setSpacing(8)
         self.model_list = QListWidget()
+        self.model_list.setMinimumHeight(76)
+        self.model_list.setMaximumHeight(94)
         self.model_list.setToolTip("Installed and bundled models available for transcription.")
         model_layout.addWidget(self.model_list)
 
         dl_row = QHBoxLayout()
-        dl_row.setSpacing(10)
+        dl_row.setSpacing(8)
         self.download_base_btn = QPushButton("Download Base")
         self.download_base_btn.setProperty("role", "secondary")
         self.download_base_btn.clicked.connect(lambda: self.download_model("base"))
@@ -221,8 +223,8 @@ class MainWindow(QMainWindow):
 
         right = QWidget()
         right_layout = QVBoxLayout(right)
-        right_layout.setContentsMargins(16, 0, 0, 0)
-        right_layout.setSpacing(12)
+        right_layout.setContentsMargins(14, 0, 0, 0)
+        right_layout.setSpacing(8)
         log_title = QLabel("Log")
         log_title.setObjectName("sectionTitle")
         right_layout.addWidget(log_title)
@@ -234,7 +236,7 @@ class MainWindow(QMainWindow):
 
         splitter.addWidget(left)
         splitter.addWidget(right)
-        splitter.setSizes([420, 660])
+        splitter.setSizes([540, 780])
         self._apply_theme()
 
     def set_selected_file(self, path: Path) -> None:
@@ -510,7 +512,7 @@ class MainWindow(QMainWindow):
 
             QLabel#appTitle {
                 color: #f6fbff;
-                font-size: 28px;
+                font-size: 24px;
                 font-weight: 700;
                 letter-spacing: 0;
             }
@@ -526,7 +528,7 @@ class MainWindow(QMainWindow):
                 background: #111c26;
                 border: 1px solid #223240;
                 border-radius: 8px;
-                padding: 10px 12px;
+                padding: 7px 10px;
             }
 
             QLabel#sectionTitle {
@@ -540,8 +542,8 @@ class MainWindow(QMainWindow):
                 background: #101c27;
                 border: 2px dashed #3a6070;
                 border-radius: 14px;
-                padding: 28px;
-                font-size: 20px;
+                padding: 18px;
+                font-size: 18px;
                 font-weight: 700;
             }
 
@@ -556,7 +558,7 @@ class MainWindow(QMainWindow):
                 background: #111c26;
                 border: 1px solid #223443;
                 border-radius: 10px;
-                margin-top: 14px;
+                margin-top: 10px;
                 font-size: 14px;
                 font-weight: 700;
             }
@@ -576,10 +578,10 @@ class MainWindow(QMainWindow):
             }
 
             QPushButton {
-                min-height: 32px;
+                min-height: 28px;
                 border: 1px solid #314758;
                 border-radius: 8px;
-                padding: 7px 14px;
+                padding: 5px 12px;
                 color: #e8f1f8;
                 background: #182737;
                 font-weight: 650;
@@ -628,12 +630,12 @@ class MainWindow(QMainWindow):
             }
 
             QComboBox {
-                min-height: 32px;
+                min-height: 28px;
                 color: #eff8fd;
                 background: #0c1721;
                 border: 1px solid #2d4354;
                 border-radius: 8px;
-                padding: 5px 32px 5px 10px;
+                padding: 4px 30px 4px 10px;
             }
 
             QComboBox:hover {
@@ -670,7 +672,7 @@ class MainWindow(QMainWindow):
                 background: #081019;
                 border: 1px solid #223443;
                 border-radius: 10px;
-                padding: 10px;
+                padding: 8px;
                 selection-background-color: #1f3d4c;
                 selection-color: #ffffff;
             }
@@ -683,7 +685,7 @@ class MainWindow(QMainWindow):
 
             QListWidget::item {
                 border-radius: 7px;
-                padding: 8px;
+                padding: 5px 7px;
                 margin: 2px;
             }
 
@@ -692,15 +694,15 @@ class MainWindow(QMainWindow):
             }
 
             QProgressBar {
-                height: 10px;
+                height: 8px;
                 border: none;
-                border-radius: 5px;
+                border-radius: 4px;
                 background: #162431;
                 color: transparent;
             }
 
             QProgressBar::chunk {
-                border-radius: 5px;
+                border-radius: 4px;
                 background: #72f2d3;
             }
 
