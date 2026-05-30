@@ -2,6 +2,11 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.12 - 2026-05-31
+
+- Added checkmarks for current dropdown items without treating them as hover-selected.
+- Aligned the timestamp export checkbox row with the Settings control rhythm.
+
 ## 0.4.11 - 2026-05-31
 
 - Reworked Settings dropdown structure with labels above fields and attached frameless dropdown menus.
