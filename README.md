@@ -60,6 +60,12 @@ The app defaults to the light theme. Use `View > Theme > Light` or `View > Theme
 
 The selected theme is stored in the user settings and restored on the next launch. The theme system is palette-driven in `app/ui/main_window.py`, so new themes can be added by defining another entry in `THEME_PALETTES` and exposing it through the theme menu.
 
+## Language handling
+
+The source language selector is passed directly to `whisper-cli`. `Auto-detect` is sent as `-l auto`, while explicit selections such as Italian are sent with the corresponding language code, for example `-l it`.
+
+For known-language recordings, selecting the language explicitly is recommended because it avoids model-side misclassification on long or noisy audio.
+
 ## Third-party components and licenses
 
 - `ffmpeg` / `ffprobe`: LGPL/GPL-licensed media toolkit. Verify the upstream build license before bundling. See https://ffmpeg.org/legal.html

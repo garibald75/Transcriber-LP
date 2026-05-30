@@ -23,7 +23,7 @@ CI runs these checks on Python 3.9 and 3.11 using `.github/workflows/ci.yml`.
 
 - Python syntax validation for all modules under `app/`
 - Basic import coverage for core and UI modules
-- Command construction tests for FFmpeg and `whisper-cli`
+- Command construction tests for FFmpeg and `whisper-cli`, including explicit `-l auto` language detection
 - Model manager tests for model discovery, missing models, and checksum enforcement
 
 ## Manual Smoke Tests
@@ -45,7 +45,7 @@ bash scripts/build_macos.sh
 open -n dist/Transcriber-LP.app
 ```
 
-Verify the app opens on the target architecture and that the bundled `ffmpeg`, `ffprobe`, `whisper-cli`, and model file are usable.
+Verify the app opens on the target architecture and that the bundled `ffmpeg`, `ffprobe`, `whisper-cli`, and downloaded or intentionally bundled model file are usable.
 
 ### Transcription Runtime
 
@@ -54,7 +54,8 @@ For a packaged Apple Silicon build, confirm:
 - bundled executables are `arm64`
 - `whisper-cli --help` runs from inside the app bundle
 - a short audio file can be converted with bundled `ffmpeg`
-- `whisper-cli` can load the bundled model and produce a `txt`, `srt`, or `vtt` file
+- `whisper-cli` can load the selected model and produce a `txt`, `srt`, or `vtt` file
+- `Auto-detect` language mode passes `-l auto`; known-language audio can be forced with a language code such as `-l it`
 
 ## Known Release Checks
 
