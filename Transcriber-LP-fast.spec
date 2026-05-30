@@ -6,6 +6,7 @@ from pathlib import Path
 root = Path.cwd()
 vendor = root / "third_party" / "macos"
 model_dir = vendor / "models"
+version = (root / "app" / "version.py").read_text().split('APP_VERSION = "')[1].split('"')[0]
 
 
 datas = [
@@ -58,4 +59,8 @@ app = BUNDLE(
     name='Transcriber-LP.app',
     icon=None,
     bundle_identifier='com.local.transcriberlp',
+    info_plist={
+        'CFBundleShortVersionString': version,
+        'CFBundleVersion': version,
+    },
 )
