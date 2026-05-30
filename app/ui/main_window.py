@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, Qt, QThreadPool, QTimer
-from PySide6.QtGui import QAction, QActionGroup, QDesktopServices
+from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QPainter, QPen
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -23,6 +23,8 @@ from PySide6.QtWidgets import (
     QSplitter,
     QVBoxLayout,
     QWidget,
+    QStyle,
+    QStyleOptionButton,
 )
 from PySide6.QtCore import QUrl
 
@@ -157,6 +159,34 @@ THEME_PALETTES = {
         "scrollbar": "#2f4656",
     },
 }
+
+
+class XCheckBox(QCheckBox):
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        if not self.isChecked():
+            return
+
+        option = QStyleOptionButton()
+        self.initStyleOption(option)
+        indicator = self.style().subElementRect(QStyle.SubElement.SE_CheckBoxIndicator, option, self)
+        margin = 4
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(QPen(Qt.GlobalColor.black, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+        painter.drawLine(
+            indicator.left() + margin,
+            indicator.top() + margin,
+            indicator.right() - margin,
+            indicator.bottom() - margin,
+        )
+        painter.drawLine(
+            indicator.right() - margin,
+            indicator.top() + margin,
+            indicator.left() + margin,
+            indicator.bottom() - margin,
+        )
 
 
 class MainWindow(QMainWindow):
@@ -379,7 +409,7 @@ class MainWindow(QMainWindow):
         log_title.setObjectName("sectionTitle")
         log_header.addWidget(log_title)
         log_header.addStretch()
-        self.log_auto_scroll_checkbox = QCheckBox("Auto-scroll")
+        self.log_auto_scroll_checkbox = XCheckBox("Auto-scroll")
         self.log_auto_scroll_checkbox.setChecked(self.log_auto_scroll)
         self.log_auto_scroll_checkbox.setToolTip("Keep the log pinned to the newest line.")
         self.log_auto_scroll_checkbox.toggled.connect(self.set_log_auto_scroll)
