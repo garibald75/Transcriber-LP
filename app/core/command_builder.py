@@ -52,7 +52,7 @@ def build_whisper_command(
         *fmt_flag,
     ]
 
-    if source_language not in ("", "auto"):
+    if source_language:
         command.extend(["-l", source_language])
 
     if task == "translate":

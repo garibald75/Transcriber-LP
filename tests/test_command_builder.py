@@ -51,6 +51,8 @@ class CommandBuilderTests(unittest.TestCase):
         self.assertIn(str(out_base), command)
         self.assertIn("--no-gpu", command)
         self.assertIn("-otxt", command)
+        self.assertIn("-l", command)
+        self.assertIn("auto", command)
 
     def test_build_whisper_command_accepts_explicit_executable(self):
         command = build_whisper_command(
