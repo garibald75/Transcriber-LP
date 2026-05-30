@@ -2,6 +2,11 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.4 - 2026-05-30
+
+- Removed the default gray border from Settings dropdowns.
+- Added explicit popup mouse tracking and custom item painting so dropdown rows highlight under the pointer.
+
 ## 0.4.3 - 2026-05-30
 
 - Fixed Settings dropdown arrows by replacing the fragile QSS triangle with a packaged chevron asset.

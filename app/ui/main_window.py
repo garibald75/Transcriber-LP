@@ -4,8 +4,8 @@ import time
 
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, Qt, QThreadPool, QTimer
-from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QPainter, QPen
+from PySide6.QtCore import QEvent, QItemSelectionModel, QObject, QSettings, Qt, QThreadPool, QTimer
+from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QPainter, QPalette, QPen
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
@@ -31,6 +31,8 @@ from PySide6.QtWidgets import (
     QWidget,
     QStyle,
     QStyleOptionButton,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
 )
 from PySide6.QtCore import QUrl
 
@@ -197,6 +199,65 @@ def _asset_url(name: str) -> str:
         if candidate.exists():
             return QUrl.fromLocalFile(str(candidate)).toString()
     return QUrl.fromLocalFile(str(candidates[-1])).toString()
+
+
+class ComboPopupHoverFilter(QObject):
+    def __init__(self, view) -> None:
+        super().__init__(view)
+        self.view = view
+
+    def eventFilter(self, watched, event) -> bool:
+        if event.type() == QEvent.Type.MouseMove:
+            position = event.position().toPoint() if hasattr(event, "position") else event.pos()
+            index = self.view.indexAt(position)
+            if index.isValid():
+                self.view.setCurrentIndex(index)
+                selection_model = self.view.selectionModel()
+                if selection_model is not None:
+                    selection_model.select(
+                        index,
+                        QItemSelectionModel.SelectionFlag.ClearAndSelect
+                        | QItemSelectionModel.SelectionFlag.Rows,
+                    )
+                self.view.viewport().update()
+        return super().eventFilter(watched, event)
+
+
+class ComboItemDelegate(QStyledItemDelegate):
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.hover_bg = "#243f51"
+        self.hover_text = "#ffffff"
+        self.text = "#142536"
+
+    def set_colors(self, *, hover_bg: str, hover_text: str, text: str) -> None:
+        self.hover_bg = hover_bg
+        self.hover_text = hover_text
+        self.text = text
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index) -> None:
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        is_hovered = bool(
+            opt.state
+            & (QStyle.StateFlag.State_MouseOver | QStyle.StateFlag.State_Selected)
+        )
+
+        if is_hovered:
+            painter.save()
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor(self.hover_bg))
+            painter.drawRoundedRect(opt.rect.adjusted(2, 1, -2, -1), 6, 6)
+            painter.restore()
+            opt.palette.setColor(QPalette.ColorRole.Text, QColor(self.hover_text))
+            opt.palette.setColor(QPalette.ColorRole.HighlightedText, QColor(self.hover_text))
+            opt.state &= ~QStyle.StateFlag.State_MouseOver
+            opt.state &= ~QStyle.StateFlag.State_Selected
+        else:
+            opt.palette.setColor(QPalette.ColorRole.Text, QColor(self.text))
+
+        super().paint(painter, opt, index)
 
 
 class XCheckBox(QCheckBox):
@@ -426,6 +487,7 @@ class MainWindow(QMainWindow):
         self.target_language_combo.addItem("Keep original language", "as_source")
         self.target_language_combo.addItem("Translate to English", "english")
         self.target_language_combo.setToolTip("Choose whether to keep the original language or translate the transcript into English.")
+        self.styled_combos = []
         for combo in (
             self.output_combo,
             self.model_combo,
@@ -1284,6 +1346,12 @@ class MainWindow(QMainWindow):
         combo.view().setUniformItemSizes(True)
         combo.view().setMinimumWidth(control["combo_min_width"])
         combo.view().entered.connect(combo.view().setCurrentIndex)
+        hover_filter = ComboPopupHoverFilter(combo.view())
+        combo.view().viewport().installEventFilter(hover_filter)
+        combo._transcriber_hover_filter = hover_filter
+        combo.view().setItemDelegate(ComboItemDelegate(combo.view()))
+        if combo not in getattr(self, "styled_combos", []):
+            self.styled_combos.append(combo)
         if hasattr(combo.view(), "setSpacing"):
             combo.view().setSpacing(2)
 
@@ -1308,11 +1376,23 @@ class MainWindow(QMainWindow):
         if hasattr(self, "dark_theme_action"):
             self.dark_theme_action.setChecked(self.theme_name == "dark")
 
+    def _sync_combo_item_delegates(self, colors: dict[str, str]) -> None:
+        for combo in getattr(self, "styled_combos", []):
+            delegate = combo.view().itemDelegate()
+            if isinstance(delegate, ComboItemDelegate):
+                delegate.set_colors(
+                    hover_bg=colors["list_hover_bg"],
+                    hover_text=colors["list_hover_text"],
+                    text=colors["input_text"],
+                )
+                combo.view().viewport().update()
+
     def _apply_theme(self) -> None:
         c = THEME_PALETTES[self.theme_name]
         radius = DESIGN_TOKENS["radius"]
         control = DESIGN_TOKENS["control"]
         combo_arrow = _asset_url("chevron_down.svg")
+        self._sync_combo_item_delegates(c)
 
         def block(selector: str, body: str) -> str:
             return f"{selector} {{\n{body}\n}}\n"
@@ -1540,7 +1620,7 @@ class MainWindow(QMainWindow):
                                 f"min-height: {control['min_height']}px;",
                                 f"color: {c['input_text']};",
                                 f"background: {c['input_bg']};",
-                                f"border: 1px solid {c['input_border']};",
+                                "border: 1px solid transparent;",
                                 f"border-radius: {radius['control']}px;",
                                 (
                                     f"padding: 6px {control['combo_arrow_width']}px "
@@ -1552,7 +1632,7 @@ class MainWindow(QMainWindow):
                     ),
                     block(
                         "QComboBox:hover",
-                        f"border-color: {c['input_hover_border']};\nbackground: {c['input_hover_bg']};",
+                        f"border-color: {c['primary_border']};\nbackground: {c['input_hover_bg']};",
                     ),
                     block(
                         "QComboBox:focus",
@@ -1578,7 +1658,7 @@ class MainWindow(QMainWindow):
                                 f"background: {c['group_bg']};",
                                 f"selection-background-color: {c['selection_bg']};",
                                 f"selection-color: {c['selection_text']};",
-                                f"border: 1px solid {c['input_border']};",
+                                "border: none;",
                                 f"border-radius: {radius['menu']}px;",
                                 "outline: 0;",
                                 f"padding: {control['combo_popup_padding']}px;",
