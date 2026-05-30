@@ -1,17 +1,17 @@
 # Transcriber-LP
 
 [![CI](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml/badge.svg)](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.2.1-blue)
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Current version: `0.2.1`
+Current version: `0.3.0`
 
 A local-first macOS transcription app built with PySide6, PyInstaller, FFmpeg, and `whisper.cpp`.
 
 ## Project highlights
 
 - Offline transcription workflow with no hosted backend or user media upload.
-- Native desktop UI with drag and drop, language controls, output format selection, media preview, quick transcript editing, theme switching, progress, cancellation, and help dialogs.
+- Native desktop UI with drag and drop, batch import, language controls, output format selection, media preview, quick transcript editing, theme switching, progress, cancellation, and help dialogs.
 - Local model management with automatic checksum-gated download when no model is installed.
 - Automated Python syntax checks and unit tests through GitHub Actions.
 - macOS Apple Silicon packaging flow with explicit third-party binary, model, and license provenance.
@@ -31,12 +31,14 @@ The repository intentionally does not commit runtime binaries, model weights, vi
 
 - drag & drop media input
 - visible `Browse file...` button for media selection
+- batch import queue for sequential transcription of multiple media files
 - output formats: `txt`, `srt`, `vtt`
 - source language selection or auto-detect
 - translate to English or keep the source language
 - model manager with automatic checksum-gated Base model download when no model is installed
 - media preview player for reviewing the original source while correcting a transcript
 - quick transcript editor with direct save support for generated `txt`, `srt`, and `vtt` files
+- batch status logging and output retrieval for completed queue items
 - stop/cancel for running jobs
 - light/dark theme switch from `View > Theme`
 - runtime help manual and open-source notice dialog

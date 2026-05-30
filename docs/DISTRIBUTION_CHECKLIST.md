@@ -17,4 +17,4 @@ Use this checklist before publishing a release artifact. It is intentionally str
 - Confirm the FFmpeg build license classification is compatible with the intended distribution model.
 - Confirm the packaged app was smoke-tested on the target macOS architecture.
 - Confirm `codesign --verify --deep --strict --verbose=2 dist/Transcriber-LP.app` passes from a non-cloud-synced release directory.
-- Create a signed Git tag such as `v0.2.1` when the release is final.
+- Create a signed Git tag such as `v0.3.0` when the release is final.
