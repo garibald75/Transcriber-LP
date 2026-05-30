@@ -26,6 +26,12 @@ For a packaged build, open `dist/Transcriber-LP.app`.
 
 Use `Stop` to cancel a running transcription.
 
+## Language Selection
+
+`Auto-detect` asks `whisper-cli` to detect the spoken language automatically. The packaged command passes this explicitly as `-l auto`.
+
+If the recording language is known, choose it directly. For example, Italian audio should use `Italian`, which passes `-l it` and avoids unnecessary language detection errors on long or noisy recordings.
+
 ## Appearance
 
 Transcriber-LP starts with the light theme by default.
