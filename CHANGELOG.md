@@ -2,6 +2,10 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.2.1 - 2026-05-30
+
+- Improved window resize behavior so the media preview, transcript editor, log panel, and model list scale proportionally.
+
 ## 0.2.0 - 2026-05-30
 
 - Added an in-app media preview player for checking the source audio or video during review.
