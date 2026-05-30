@@ -4,9 +4,8 @@ import time
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QThreadPool
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtGui import QAction, QDesktopServices
 from PySide6.QtWidgets import (
-    QAction,
     QComboBox,
     QFileDialog,
     QFormLayout,
