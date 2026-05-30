@@ -13,3 +13,4 @@ Transcriber-LP follows semantic versioning. The first tracked baseline starts at
 - Added GitHub landing screenshot, user manual, test plan, unit tests, and CI workflow.
 - Added macOS PyInstaller packaging metadata and runtime-library checks.
 - Added release-readiness documentation for third-party binary and model provenance.
+- Added technical review notes for portfolio and interview review.
