@@ -8,6 +8,7 @@ build/
 dist/
 build.log
 cleanup__report.txt
+app/assets/transcriber_icon.icns
 
 .cleanup__backup/
 .cleanup_benny_backup/

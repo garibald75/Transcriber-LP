@@ -70,7 +70,7 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='Transcriber-LP.app',
-    icon=None,
+    icon=str(root / "app" / "assets" / "transcriber_icon.icns"),
     bundle_identifier='com.local.transcriberlp',
     info_plist={
         'CFBundleShortVersionString': version,
