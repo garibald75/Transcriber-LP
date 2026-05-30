@@ -1,4 +1,4 @@
-#  Transcriber
+#  Transcriber-LP
 
 Offline desktop app for local video/audio transcription with a bundled engine, bundled FFmpeg, a default bundled Whisper model, and optional model updates stored outside the app bundle.
 
