@@ -160,6 +160,21 @@ codesign --verify --deep --strict --verbose=2 dist/Transcriber-LP.app
 The current packaging is targeted for Apple Silicon (`arm64`).
 For Intel support, build with a universal2 Python environment and compatible binaries, or use a separate Intel-specific build environment.
 
+## Other platforms
+
+Official packaged releases currently target macOS Apple Silicon.
+
+Linux and Windows users can run Transcriber-LP from source if they provide compatible `ffmpeg`, `ffprobe`, and `whisper-cli` binaries for their platform. Platform-specific packaged builds are not included yet.
+
+Community contributions for Linux, Windows, Intel macOS, and other packaging targets are welcome. Good contributions should include:
+
+- a documented build script, for example `scripts/build_linux.sh` or `scripts/build_windows.ps1`
+- platform-specific third-party binary locations, for example `third_party/linux/` or `third_party/windows/`
+- updated license and provenance notes for bundled binaries
+- local test notes or CI coverage for the new platform
+
+Until those flows are tested and documented, non-macOS packages should be treated as community-supported rather than official release artifacts.
+
 ## Testing and CI
 
 A GitHub Actions workflow is provided in `.github/workflows/ci.yml`.
