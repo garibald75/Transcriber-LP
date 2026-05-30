@@ -1,19 +1,21 @@
-from PyInstaller.utils.hooks import collect_submodules
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
 from pathlib import Path
+
+from PyInstaller.utils.hooks import collect_submodules
 
 root = Path.cwd()
 vendor = root / "third_party" / "macos"
 model_dir = vendor / "models"
 version = (root / "app" / "version.py").read_text().split('APP_VERSION = "')[1].split('"')[0]
+bundle_model = os.environ.get("TRANSCRIBER_LP_BUNDLE_MODEL") == "1"
 
 
 datas = [
     (str(vendor / "ffmpeg"), "vendor"),
     (str(vendor / "ffprobe"), "vendor"),
     (str(vendor / "whisper-cli"), "vendor"),
-    (str(model_dir / "ggml-base.bin"), "vendor/models"),
     (str(root / "LICENSE"), "."),
     (str(root / "CHANGELOG.md"), "."),
     (str(root / "docs" / "THIRD_PARTY_NOTICE.md"), "docs"),
@@ -24,8 +26,11 @@ datas = [
 
 datas.extend((str(path), "vendor") for path in sorted(vendor.glob("*.dylib")))
 
-
-
+if bundle_model:
+    base_model = model_dir / "ggml-base.bin"
+    if not base_model.exists():
+        raise FileNotFoundError(f"Missing bundled model requested by TRANSCRIBER_LP_BUNDLE_MODEL=1: {base_model}")
+    datas.append((str(base_model), "vendor/models"))
 
 
 hiddenimports = ["PySide6.QtCore", "PySide6.QtGui", "PySide6.QtWidgets", "app.core.transcriber"] + collect_submodules("app") + collect_submodules("app.core")

@@ -12,7 +12,7 @@ A local-first macOS transcription app built with PySide6, PyInstaller, FFmpeg, a
 
 - Offline transcription workflow with no hosted backend or user media upload.
 - Native desktop UI with drag and drop, language controls, output format selection, theme switching, progress, cancellation, and help dialogs.
-- Local model management with checksum validation for supported downloads.
+- Local model management with automatic checksum-gated download when no model is installed.
 - Automated Python syntax checks and unit tests through GitHub Actions.
 - macOS Apple Silicon packaging flow with explicit third-party binary, model, and license provenance.
 
@@ -34,7 +34,7 @@ The repository intentionally does not commit runtime binaries, model weights, vi
 - output formats: `txt`, `srt`, `vtt`
 - source language selection or auto-detect
 - translate to English or keep the source language
-- model manager with checksum-gated downloads
+- model manager with automatic checksum-gated Base model download when no model is installed
 - stop/cancel for running jobs
 - light/dark theme switch from `View > Theme`
 - runtime help manual and open-source notice dialog
@@ -68,10 +68,10 @@ The selected theme is stored in the user settings and restored on the next launc
 - `requests`: Apache License 2.0.
 - Models (for example `ggml-base.bin`): may have separate licensing and distribution requirements.
 
-This repository avoids committing binary distributions and model weights. Runtime binaries are supplied from `third_party/macos/` before packaging, and should only be added when their licenses are compatible with the distribution plan.
+This repository avoids committing binary distributions and model weights. Runtime binaries are supplied from `third_party/macos/` before packaging, and should only be added when their licenses are compatible with the distribution plan. The default macOS bundle does not include model weights; the app prompts for a verified Base model download when no local model is present.
 
 Transcriber-LP source code is licensed under the MIT License. See `LICENSE`.
-Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_PROVENANCE.md`, and `docs/DISTRIBUTION_CHECKLIST.md`.
+Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_PROVENANCE.md`, `docs/RELEASE_COMPLIANCE.md`, and `docs/DISTRIBUTION_CHECKLIST.md`.
 
 ## Repository structure
 
@@ -80,6 +80,7 @@ Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_P
 - `tests/` unit tests and import checks
 - `docs/USER_MANUAL.md` end-user manual
 - `docs/THIRD_PARTY_NOTICE.md` open-source owners, licenses, and redistribution policy
+- `docs/RELEASE_COMPLIANCE.md` release policy for binaries, models, and license texts
 - `docs/DISTRIBUTION_CHECKLIST.md` release readiness checklist
 - `docs/TECHNICAL_REVIEW.md` implementation notes for technical review
 - `scripts/` packaging and helper scripts
@@ -115,16 +116,22 @@ The packaging target is Apple Silicon (`arm64`). Ensure these files are present 
 - `third_party/macos/ffprobe`
 - `third_party/macos/whisper-cli`
 - any `@rpath` `.dylib` dependencies reported by `otool -L third_party/macos/whisper-cli`
-- `third_party/macos/models/ggml-base.bin`
 
 Helper scripts:
 
 ```bash
 bash scripts/build_whisper_cli.sh
-bash scripts/download_default_model.sh
 ```
 
 `ffmpeg` and `ffprobe` must be supplied from a license-compatible macOS arm64 build and recorded in `docs/FFMPEG_BUILD.md`.
+
+The default build does not bundle model weights. Users are prompted to download the checksum-verified Base model on first run when no local model is installed. To create a bundle that includes `ggml-base.bin`, place it in `third_party/macos/models/` and build with:
+
+```bash
+TRANSCRIBER_LP_BUNDLE_MODEL=1 bash scripts/build_macos.sh
+```
+
+Only use `TRANSCRIBER_LP_BUNDLE_MODEL=1` after completing `docs/MODEL_PROVENANCE.md` and including the required model license/provenance notices in the release artifact.
 
 Then run:
 

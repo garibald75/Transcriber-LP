@@ -10,7 +10,7 @@ Runtime components:
 - requests transitive dependencies: urllib3 contributors (MIT), certifi contributors / Mozilla CA bundle (MPL-2.0), charset-normalizer contributors (MIT), idna contributors (BSD-3-Clause).
 - FFmpeg / ffmpeg / ffprobe: FFmpeg project contributors, LGPLv2.1-or-later or GPLv2-or-later depending on the build.
 - whisper.cpp / whisper-cli and related ggml libraries: Georgi Gerganov and whisper.cpp contributors, MIT.
-- Whisper model files: OpenAI Whisper models converted/distributed for whisper.cpp by Georgi Gerganov; verify each model file's upstream license before redistribution.
+- Whisper model files: OpenAI Whisper models converted/distributed for whisper.cpp by Georgi Gerganov; downloaded at runtime by default and verified by checksum before use.
 
 Build-only components:
 - PyInstaller: PyInstaller Development Team, GPLv2-or-later with bootloader exception.
@@ -18,6 +18,7 @@ Build-only components:
 
 Policy:
 - Do not commit or distribute proprietary binaries, codecs, or model weights.
+- Do not bundle model weights by default; use checksum-verified runtime downloads unless a release explicitly documents bundled model provenance.
 - Do not bundle ffmpeg, whisper-cli, dynamic libraries, or model files unless the specific files are open-source, provenance is recorded, and license notices are included.
 - See docs/THIRD_PARTY_NOTICE.md for source URLs and distribution guidance.
 """

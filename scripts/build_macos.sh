@@ -29,8 +29,8 @@ if command -v otool >/dev/null 2>&1; then
   done < <(otool -L third_party/macos/whisper-cli | awk '/@rpath/ {print $1}')
 fi
 
-if [[ ! -f "third_party/macos/models/ggml-base.bin" ]]; then
-  echo "Missing third_party/macos/models/ggml-base.bin"
+if [[ "${TRANSCRIBER_LP_BUNDLE_MODEL:-0}" == "1" && ! -f "third_party/macos/models/ggml-base.bin" ]]; then
+  echo "Missing third_party/macos/models/ggml-base.bin requested by TRANSCRIBER_LP_BUNDLE_MODEL=1"
   exit 1
 fi
 

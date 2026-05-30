@@ -20,7 +20,7 @@ This notice is not legal advice. Before distributing a packaged app, verify the 
 | idna | idna contributors | BSD-3-Clause | Transitive dependency of requests | https://pypi.org/project/idna/ |
 | FFmpeg / ffmpeg / ffprobe | FFmpeg project contributors | LGPLv2.1-or-later, or GPLv2-or-later depending on build configuration | Media probing and audio extraction | https://ffmpeg.org/legal.html |
 | whisper.cpp / whisper-cli and related ggml libraries | Georgi Gerganov and whisper.cpp contributors | MIT | Local speech-to-text engine | https://github.com/ggml-org/whisper.cpp |
-| Whisper model files | OpenAI Whisper models, converted/distributed for whisper.cpp by Georgi Gerganov | Verify the exact model file before redistribution; OpenAI Whisper source is MIT | Local transcription model weights | https://github.com/openai/whisper and https://huggingface.co/ggerganov/whisper.cpp |
+| Whisper model files | OpenAI Whisper models, converted/distributed for whisper.cpp by Georgi Gerganov | Verify the exact model file before redistribution; OpenAI Whisper source is MIT | Optional local transcription model weights downloaded at runtime or bundled by explicit release decision | https://github.com/openai/whisper and https://huggingface.co/ggerganov/whisper.cpp |
 
 ## Build-Only Components
 
@@ -35,6 +35,7 @@ This notice is not legal advice. Before distributing a packaged app, verify the 
 
 - Do not commit runtime binaries, model weights, `.bin` files, PyInstaller output, virtual environments, caches, or local backup files.
 - Do not bundle proprietary codecs, proprietary ffmpeg builds, proprietary speech engines, or model weights whose redistribution terms are unclear.
+- Do not bundle model weights by default; the default app prompts for a checksum-verified model download when no model is installed.
 - If distributing `ffmpeg`/`ffprobe`, include the license text for the exact build and comply with LGPL/GPL source and relinking requirements.
 - If distributing `PySide6`/Qt, comply with LGPLv3 or GPLv3 obligations, including license text and user rights required by the selected license.
 - If distributing `whisper-cli`, include the related dynamic libraries required by that local build and keep their notices with the release artifact.
@@ -45,5 +46,6 @@ This notice is not legal advice. Before distributing a packaged app, verify the 
 
 - Record FFmpeg binary provenance in `docs/FFMPEG_BUILD.md`.
 - Record model provenance in `docs/MODEL_PROVENANCE.md`.
+- Follow `docs/RELEASE_COMPLIANCE.md` for release artifact policy.
 - Use `docs/DISTRIBUTION_CHECKLIST.md` before publishing a release artifact.
 - Include `LICENSE`, this notice, and the exact third-party license texts inside distributed app bundles.

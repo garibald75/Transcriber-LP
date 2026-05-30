@@ -8,8 +8,10 @@ Use this checklist before publishing a release artifact. It is intentionally str
 - Confirm no binaries, models, virtual environments, build outputs, caches, or backup files are committed.
 - Confirm `LICENSE` is present for Transcriber-LP source code.
 - Confirm `docs/THIRD_PARTY_NOTICE.md` is current.
+- Confirm `docs/RELEASE_COMPLIANCE.md` has been followed.
 - Confirm bundled `ffmpeg`/`ffprobe` provenance is recorded in `docs/FFMPEG_BUILD.md`.
-- Confirm bundled model provenance is recorded in `docs/MODEL_PROVENANCE.md`.
+- Confirm no model weights are bundled by default.
+- If a model is intentionally bundled, confirm `TRANSCRIBER_LP_BUNDLE_MODEL=1` was used and bundled model provenance is recorded in `docs/MODEL_PROVENANCE.md`.
 - Confirm `whisper-cli` and all required `@rpath` `.dylib` files are bundled.
 - Confirm exact third-party license texts are included with any packaged app bundle.
 - Confirm the FFmpeg build license classification is compatible with the intended distribution model.

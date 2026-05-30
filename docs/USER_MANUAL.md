@@ -41,6 +41,8 @@ The app looks for models in this order:
 
 The model manager can download supported `whisper.cpp` models into the user models directory.
 
+If no model is installed, the app automatically asks whether to download the Base model. The download is saved outside the app bundle and accepted only after checksum verification.
+
 Only models with a checksum in `app/core/model_manager.py` are enabled for in-app download. Models without a checksum must be installed manually after their provenance is verified.
 
 ## Outputs
@@ -60,10 +62,11 @@ third_party/macos/ffmpeg
 third_party/macos/ffprobe
 third_party/macos/whisper-cli
 third_party/macos/<whisper-cli @rpath dylibs>
-third_party/macos/models/ggml-base.bin
 ```
 
 Use `otool -L third_party/macos/whisper-cli` to identify the `.dylib` files required by the local `whisper-cli` build. `scripts/build_whisper_cli.sh` copies these libraries for the default macOS build flow.
+
+Model files are not bundled by default. If a release intentionally bundles `ggml-base.bin`, build with `TRANSCRIBER_LP_BUNDLE_MODEL=1` and complete the model provenance and license checks first.
 
 Only distribute third-party binaries and models when their licenses allow it. Complete `docs/DISTRIBUTION_CHECKLIST.md` before publishing a release.
 

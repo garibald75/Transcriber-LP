@@ -66,6 +66,8 @@ MODEL_DEFS = {
     ),
 }
 
+DEFAULT_DOWNLOAD_MODEL_KEY = "base"
+
 
 class ModelManager:
     def __init__(self) -> None:
@@ -79,6 +81,12 @@ class ModelManager:
         available.extend(self._collect_preferred_models(seen))
         available.extend(self._collect_custom_models(seen))
         return available
+
+    def has_models(self) -> bool:
+        return bool(self.available_models())
+
+    def default_download_model(self) -> ModelDefinition:
+        return MODEL_DEFS[DEFAULT_DOWNLOAD_MODEL_KEY]
 
     def _collect_preferred_models(self, seen: set[str]) -> list[tuple[str, Path, str]]:
         results: list[tuple[str, Path, str]] = []
