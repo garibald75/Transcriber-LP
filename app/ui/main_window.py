@@ -1,4 +1,5 @@
 from __future__ import annotations
+import sys
 import time
 
 from pathlib import Path
@@ -12,6 +13,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QFormLayout,
+    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -180,8 +182,21 @@ DESIGN_TOKENS = {
         "combo_min_width": 190,
         "combo_popup_item_height": 34,
         "combo_popup_padding": 8,
+        "model_download_min_width": 96,
     },
 }
+
+
+def _asset_url(name: str) -> str:
+    bundle_root = Path(getattr(sys, "_MEIPASS", ""))
+    candidates = [
+        bundle_root / "assets" / name,
+        Path(__file__).resolve().parents[1] / "assets" / name,
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return QUrl.fromLocalFile(str(candidate)).toString()
+    return QUrl.fromLocalFile(str(candidates[-1])).toString()
 
 
 class XCheckBox(QCheckBox):
@@ -429,39 +444,43 @@ class MainWindow(QMainWindow):
         settings_layout.addRow("Installed models", self.model_list)
 
         downloads_widget = QWidget()
-        dl_row = QHBoxLayout()
-        dl_row.setContentsMargins(0, 0, 0, 0)
-        dl_row.setSpacing(8)
-        downloads_widget.setLayout(dl_row)
-        self.download_base_btn = QPushButton("Download Base")
+        dl_grid = QGridLayout()
+        dl_grid.setContentsMargins(0, 0, 0, 0)
+        dl_grid.setHorizontalSpacing(8)
+        dl_grid.setVerticalSpacing(8)
+        downloads_widget.setLayout(dl_grid)
+        self.download_base_btn = QPushButton("Base")
         self.download_base_btn.setProperty("role", "secondary")
         self.download_base_btn.clicked.connect(lambda: self.download_model("base"))
         self.download_base_btn.setToolTip("Download the small base model for faster transcription.")
-        dl_row.addWidget(self.download_base_btn)
+        dl_grid.addWidget(self.download_base_btn, 0, 0)
 
-        self.download_small_btn = QPushButton("Download Small")
+        self.download_small_btn = QPushButton("Small")
         self.download_small_btn.setProperty("role", "secondary")
         self.download_small_btn.clicked.connect(lambda: self.download_model("small"))
         self.download_small_btn.setToolTip("Download the small multilingual model.")
-        dl_row.addWidget(self.download_small_btn)
+        dl_grid.addWidget(self.download_small_btn, 0, 1)
 
-        self.download_medium_btn = QPushButton("Download Medium")
+        self.download_medium_btn = QPushButton("Medium")
         self.download_medium_btn.setProperty("role", "secondary")
         self.download_medium_btn.clicked.connect(lambda: self.download_model("medium"))
         self.download_medium_btn.setToolTip("Download the medium multilingual model.")
-        dl_row.addWidget(self.download_medium_btn)
+        dl_grid.addWidget(self.download_medium_btn, 1, 0)
 
-        self.download_large_btn = QPushButton("Download Large Turbo")
+        self.download_large_btn = QPushButton("Turbo")
         self.download_large_btn.setProperty("role", "secondary")
         self.download_large_btn.clicked.connect(lambda: self.download_model("large-v3-turbo-q5_0"))
         self.download_large_btn.setToolTip("Download the large turbo quantized model.")
-        dl_row.addWidget(self.download_large_btn)
+        dl_grid.addWidget(self.download_large_btn, 1, 1)
         self.download_buttons = [
             self.download_base_btn,
             self.download_small_btn,
             self.download_medium_btn,
             self.download_large_btn,
         ]
+        for button in self.download_buttons:
+            button.setObjectName("downloadModelButton")
+            button.setMinimumWidth(DESIGN_TOKENS["control"]["model_download_min_width"])
 
         settings_layout.addRow("Model downloads", downloads_widget)
 
@@ -1264,6 +1283,7 @@ class MainWindow(QMainWindow):
         combo.view().viewport().setAttribute(Qt.WidgetAttribute.WA_Hover, True)
         combo.view().setUniformItemSizes(True)
         combo.view().setMinimumWidth(control["combo_min_width"])
+        combo.view().entered.connect(combo.view().setCurrentIndex)
         if hasattr(combo.view(), "setSpacing"):
             combo.view().setSpacing(2)
 
@@ -1292,6 +1312,7 @@ class MainWindow(QMainWindow):
         c = THEME_PALETTES[self.theme_name]
         radius = DESIGN_TOKENS["radius"]
         control = DESIGN_TOKENS["control"]
+        combo_arrow = _asset_url("chevron_down.svg")
 
         def block(selector: str, body: str) -> str:
             return f"{selector} {{\n{body}\n}}\n"
@@ -1504,6 +1525,15 @@ class MainWindow(QMainWindow):
                     ),
                     block("QPushButton#browseButton:pressed", f"background: {c['primary_hover_bg']};"),
                     block(
+                        "QPushButton#downloadModelButton",
+                        "\n".join(
+                            [
+                                "min-height: 32px;",
+                                "padding: 6px 10px;",
+                            ]
+                        ),
+                    ),
+                    block(
                         "QComboBox",
                         "\n".join(
                             [
@@ -1533,13 +1563,10 @@ class MainWindow(QMainWindow):
                         "QComboBox::down-arrow",
                         "\n".join(
                             [
-                                "image: none;",
-                                "width: 0;",
-                                "height: 0;",
-                                "border-left: 5px solid transparent;",
-                                "border-right: 5px solid transparent;",
-                                f"border-top: 6px solid {c['arrow']};",
-                                "margin-right: 10px;",
+                                f'image: url("{combo_arrow}");',
+                                "width: 12px;",
+                                "height: 8px;",
+                                "margin-right: 12px;",
                             ]
                         ),
                     ),
@@ -1572,7 +1599,7 @@ class MainWindow(QMainWindow):
                     ),
                     block(
                         "QComboBox QAbstractItemView::item:selected",
-                        f"background: {c['selection_bg']};\ncolor: {c['selection_text']};",
+                        f"background: {c['list_hover_bg']};\ncolor: {c['list_hover_text']};",
                     ),
                     block(
                         "QCheckBox",

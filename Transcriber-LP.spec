@@ -13,6 +13,7 @@ bundle_model = os.environ.get("TRANSCRIBER_LP_BUNDLE_MODEL") == "1"
 
 
 datas = [
+    (str(root / "app" / "assets" / "chevron_down.svg"), "assets"),
     (str(vendor / "ffmpeg"), "vendor"),
     (str(vendor / "ffprobe"), "vendor"),
     (str(vendor / "whisper-cli"), "vendor"),
