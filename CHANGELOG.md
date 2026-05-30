@@ -2,6 +2,11 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.8 - 2026-05-31
+
+- Restored visible dropdown popup items after removing the wrong native popup frame layer.
+- Aligned Settings labels with explicit label widgets sized to the dropdown rows.
+
 ## 0.4.7 - 2026-05-31
 
 - Restored normal closed-state borders on Settings dropdown controls.

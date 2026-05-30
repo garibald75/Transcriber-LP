@@ -184,6 +184,7 @@ DESIGN_TOKENS = {
         "combo_min_width": 190,
         "combo_popup_item_height": 34,
         "combo_popup_padding": 8,
+        "settings_label_height": 48,
         "model_download_min_width": 96,
     },
 }
@@ -249,24 +250,6 @@ class ComboItemDelegate(QStyledItemDelegate):
 
 
 class DesignComboBox(QComboBox):
-    def showPopup(self) -> None:
-        view = self.view()
-        view.setWindowFlags(
-            Qt.WindowType.Popup
-            | Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.NoDropShadowWindowHint
-        )
-        view.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        view.setFrameShape(QFrame.Shape.NoFrame)
-        view.setLineWidth(0)
-        view.setMidLineWidth(0)
-        super().showPopup()
-
-        popup = view.window()
-        popup.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
-        popup.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
-        popup.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
     def paintEvent(self, event) -> None:
         super().paintEvent(event)
 
@@ -481,10 +464,21 @@ class MainWindow(QMainWindow):
         settings_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         settings_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
 
+        def settings_label(text: str) -> QLabel:
+            label = QLabel(text)
+            label.setProperty("role", "settingsLabel")
+            label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            label.setMinimumHeight(DESIGN_TOKENS["control"]["settings_label_height"])
+            label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            return label
+
+        def add_settings_row(text: str, field: QWidget) -> None:
+            settings_layout.addRow(settings_label(text), field)
+
         self.output_combo = DesignComboBox()
         self.output_combo.addItems(["txt", "srt", "vtt"])
         self.output_combo.setToolTip("Choose the output subtitle/text format for the transcription.")
-        settings_layout.addRow("Output format", self.output_combo)
+        add_settings_row("Output format", self.output_combo)
         self.save_timestamps_checkbox = XCheckBox("Save timestamps")
         self.save_timestamps_checkbox.setChecked(self._settings_bool("export/save_timestamps", False))
         self.save_timestamps_checkbox.setToolTip(
@@ -493,7 +487,7 @@ class MainWindow(QMainWindow):
         self.save_timestamps_checkbox.toggled.connect(
             lambda enabled: self.settings.setValue("export/save_timestamps", enabled)
         )
-        settings_layout.addRow("Timestamp export", self.save_timestamps_checkbox)
+        add_settings_row("Timestamp export", self.save_timestamps_checkbox)
 
         self.model_combo = DesignComboBox()
         self.model_combo.setToolTip("Select the transcription model. Models are loaded from the app bundle or downloaded models.")
@@ -519,14 +513,14 @@ class MainWindow(QMainWindow):
         ):
             self._configure_combo(combo)
 
-        settings_layout.addRow("Model", self.model_combo)
-        settings_layout.addRow("Source language", self.source_language_combo)
-        settings_layout.addRow("Translation target", self.target_language_combo)
+        add_settings_row("Model", self.model_combo)
+        add_settings_row("Source language", self.source_language_combo)
+        add_settings_row("Translation target", self.target_language_combo)
         self.model_list = QListWidget()
         self.model_list.setMinimumHeight(64)
         self.model_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.model_list.setToolTip("Installed and bundled models available for transcription.")
-        settings_layout.addRow("Installed models", self.model_list)
+        add_settings_row("Installed models", self.model_list)
 
         downloads_widget = QWidget()
         dl_grid = QGridLayout()
@@ -567,7 +561,7 @@ class MainWindow(QMainWindow):
             button.setObjectName("downloadModelButton")
             button.setMinimumWidth(DESIGN_TOKENS["control"]["model_download_min_width"])
 
-        settings_layout.addRow("Model downloads", downloads_widget)
+        add_settings_row("Model downloads", downloads_widget)
 
         left_layout.addWidget(settings_box)
 
@@ -1367,11 +1361,6 @@ class MainWindow(QMainWindow):
         combo.view().setMouseTracking(True)
         combo.view().viewport().setMouseTracking(True)
         combo.view().viewport().setAttribute(Qt.WidgetAttribute.WA_Hover, True)
-        combo.view().setWindowFlags(
-            Qt.WindowType.Popup
-            | Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.NoDropShadowWindowHint
-        )
         combo.view().setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         combo.view().setFrameShape(QFrame.Shape.NoFrame)
         combo.view().setLineWidth(0)
