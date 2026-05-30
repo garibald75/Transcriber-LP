@@ -19,3 +19,4 @@ Transcriber-LP follows semantic versioning. The first tracked baseline starts at
 - Added release compliance policy for binaries, model weights, and license-text obligations.
 - Fixed source language command construction so `Auto-detect` is passed explicitly to `whisper-cli` as `-l auto`.
 - Added a persistent `Auto-scroll` control for the runtime log panel, with an explicit checked marker.
+- Improved dropdown hover styling and made the media browse control read more clearly as a button.

@@ -91,6 +91,8 @@ THEME_PALETTES = {
         "list_text": "#263949",
         "list_bg": "#ffffff",
         "list_border": "#d7e1ea",
+        "list_hover_bg": "#c8eadf",
+        "list_hover_text": "#102131",
         "selection_bg": "#d9f4ec",
         "selection_text": "#102131",
         "progress_bg": "#e2eaf1",
@@ -151,6 +153,8 @@ THEME_PALETTES = {
         "list_text": "#dbe9f1",
         "list_bg": "#081019",
         "list_border": "#223443",
+        "list_hover_bg": "#243f51",
+        "list_hover_text": "#ffffff",
         "selection_bg": "#1f3d4c",
         "selection_text": "#ffffff",
         "progress_bg": "#162431",
@@ -274,8 +278,11 @@ class MainWindow(QMainWindow):
         self.drop_zone.setToolTip("Drag and drop a media file here, or click Browse to select one.")
         left_layout.addWidget(self.drop_zone)
 
-        browse_btn = QPushButton("Browse…")
+        browse_btn = QPushButton("Browse file…")
+        browse_btn.setObjectName("browseButton")
         browse_btn.setProperty("role", "secondary")
+        browse_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        browse_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton))
         browse_btn.clicked.connect(self.browse_file)
         browse_btn.setToolTip("Open a file selector to choose the audio or video file to transcribe.")
         left_layout.addWidget(browse_btn)
@@ -312,6 +319,13 @@ class MainWindow(QMainWindow):
         self.target_language_combo.addItem("Keep original language", "as_source")
         self.target_language_combo.addItem("Translate to English", "english")
         self.target_language_combo.setToolTip("Choose whether to keep the original language or translate the transcript into English.")
+        for combo in (
+            self.output_combo,
+            self.model_combo,
+            self.source_language_combo,
+            self.target_language_combo,
+        ):
+            self._configure_combo(combo)
 
         settings_layout.addRow("Model", self.model_combo)
         settings_layout.addRow("Source language", self.source_language_combo)
@@ -687,6 +701,12 @@ class MainWindow(QMainWindow):
             return value
         return str(value).strip().lower() not in {"0", "false", "no", "off"}
 
+    def _configure_combo(self, combo: QComboBox) -> None:
+        combo.setCursor(Qt.CursorShape.PointingHandCursor)
+        combo.view().setCursor(Qt.CursorShape.PointingHandCursor)
+        combo.view().setMouseTracking(True)
+        combo.view().setUniformItemSizes(True)
+
     def _set_download_controls_enabled(self, enabled: bool) -> None:
         for button in getattr(self, "download_buttons", []):
             button.setEnabled(enabled)
@@ -899,6 +919,29 @@ class MainWindow(QMainWindow):
                         f"background: {c['secondary_bg']};\nborder-color: {c['secondary_border']};",
                     ),
                     block(
+                        "QPushButton#browseButton",
+                        "\n".join(
+                            [
+                                "min-height: 32px;",
+                                f"color: {c['title']};",
+                                f"background: {c['input_bg']};",
+                                f"border: 2px solid {c['primary_border']};",
+                                "font-weight: 700;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QPushButton#browseButton:hover",
+                        "\n".join(
+                            [
+                                f"background: {c['primary_bg']};",
+                                f"border-color: {c['primary_hover_bg']};",
+                                f"color: {c['primary_text']};",
+                            ]
+                        ),
+                    ),
+                    block("QPushButton#browseButton:pressed", f"background: {c['primary_hover_bg']};"),
+                    block(
                         "QComboBox",
                         "\n".join(
                             [
@@ -914,6 +957,10 @@ class MainWindow(QMainWindow):
                     block(
                         "QComboBox:hover",
                         f"border-color: {c['input_hover_border']};\nbackground: {c['input_hover_bg']};",
+                    ),
+                    block(
+                        "QComboBox:focus",
+                        f"border-color: {c['primary_border']};\nbackground: {c['input_hover_bg']};",
                     ),
                     block("QComboBox::drop-down", "width: 28px;\nborder: none;"),
                     block(
@@ -942,6 +989,18 @@ class MainWindow(QMainWindow):
                                 "outline: 0;",
                             ]
                         ),
+                    ),
+                    block(
+                        "QComboBox QAbstractItemView::item",
+                        "min-height: 26px;\npadding: 5px 10px;",
+                    ),
+                    block(
+                        "QComboBox QAbstractItemView::item:hover",
+                        f"background: {c['list_hover_bg']};\ncolor: {c['list_hover_text']};",
+                    ),
+                    block(
+                        "QComboBox QAbstractItemView::item:selected",
+                        f"background: {c['selection_bg']};\ncolor: {c['selection_text']};",
                     ),
                     block(
                         "QCheckBox",
