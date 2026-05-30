@@ -41,6 +41,7 @@ This notice is not legal advice. Before distributing a packaged app, verify the 
 - If distributing `whisper-cli`, include the related dynamic libraries required by that local build and keep their notices with the release artifact.
 - If distributing model files, document the exact model source, owner, license, and conversion provenance.
 - Keep this notice, README, and the in-app `Help > Open-source licenses` dialog aligned whenever dependencies change.
+- Generated transcripts, subtitle files, edited transcript files, batch results, and timestamp CSV sidecars are user outputs, not third-party components. Do not include them in public release artifacts unless they are intentional samples with clear provenance and consent.
 
 ## Release Documentation
 

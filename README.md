@@ -218,3 +218,4 @@ If the checkout is inside a cloud-synced folder and Python cannot write its cach
 - The UI includes light/dark themes, tooltips, and inline help.
 - The app includes `Help > Open-source licenses` and `docs/THIRD_PARTY_NOTICE.md` to cite third-party owners and licenses.
 - Release artifacts should include exact third-party license texts and provenance for bundled binaries and models.
+- Generated transcripts, subtitles, edited files, batch results, and timestamp CSV sidecars are local user outputs. They should not be included in public release artifacts unless they are intentional sample assets with clear provenance and consent.
