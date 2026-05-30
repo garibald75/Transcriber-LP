@@ -3,7 +3,7 @@ import time
 
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, Qt, QThreadPool
+from PySide6.QtCore import QSettings, Qt, QThreadPool, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices
 from PySide6.QtWidgets import (
     QComboBox,
@@ -169,12 +169,14 @@ class MainWindow(QMainWindow):
         self.current_worker = None
         self.download_started_at = 0.0
         self.active_download_model_key: str | None = None
+        self.auto_model_prompted = False
         self.settings = QSettings("Transcriber-LP", "Transcriber-LP")
         saved_theme = self.settings.value("appearance/theme", "light")
         self.theme_name = saved_theme if saved_theme in THEME_PALETTES else "light"
 
         self._build_ui()
         self.refresh_models()
+        QTimer.singleShot(250, self.ensure_default_model_available)
 
     def _build_ui(self) -> None:
         menu_bar = self.menuBar()
@@ -416,6 +418,28 @@ class MainWindow(QMainWindow):
         if not items:
             self.model_list.addItem("No model found")
 
+    def ensure_default_model_available(self, force: bool = False) -> None:
+        if self.model_combo.count() > 0 or self.current_worker is not None:
+            return
+        if self.auto_model_prompted and not force:
+            return
+
+        self.auto_model_prompted = True
+        model = self.model_manager.default_download_model()
+        answer = QMessageBox.question(
+            self,
+            "Download transcription model",
+            (
+                "No transcription model is installed.\n\n"
+                f"Download {model.label} ({model.size_label}) now?\n"
+                "The file will be saved in your Application Support folder and verified by checksum."
+            ),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes,
+        )
+        if answer == QMessageBox.Yes:
+            self.download_model(model.key)
+
     def append_log(self, text: str) -> None:
         self.log.appendPlainText(text)
 
@@ -425,7 +449,7 @@ class MainWindow(QMainWindow):
             return
 
         if self.model_combo.count() == 0:
-            QMessageBox.warning(self, "Missing model", "No model available.")
+            self.ensure_default_model_available(force=True)
             return
 
         model_key = self.model_combo.currentData()
@@ -583,6 +607,7 @@ class MainWindow(QMainWindow):
             "Note:\n"
             "- Le trascrizioni vengono salvate in ~/Library/Application Support/Transcriber-LP/outputs.\n"
             "- I modelli scaricati vengono memorizzati in ~/Library/Application Support/Transcriber-LP/models.\n"
+            "- Se non è presente nessun modello, l'app propone il download verificato del modello Base.\n"
             "- Assicurati di avere i binari ffmpeg e whisper-cli in third_party/macos quando crei il bundle.\n"
             "- Usa solo componenti open source e conserva le attribuzioni in docs/THIRD_PARTY_NOTICE.md.\n"
         )

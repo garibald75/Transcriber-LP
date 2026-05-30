@@ -34,6 +34,28 @@ class ModelManagerTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 manager.resolve_model_path("base")
 
+    def test_has_models_reflects_available_models(self):
+        manager = ModelManager()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            user_dir = Path(tmpdir) / "user"
+            bundled_dir = Path(tmpdir) / "bundled"
+            user_dir.mkdir()
+            bundled_dir.mkdir()
+            manager.user_models_dir = user_dir
+            manager.bundled_dir = bundled_dir
+
+            self.assertFalse(manager.has_models())
+            (user_dir / MODEL_DEFS["base"].filename).write_text("model")
+            self.assertTrue(manager.has_models())
+
+    def test_default_download_model_is_checksum_gated_base(self):
+        manager = ModelManager()
+        model = manager.default_download_model()
+
+        self.assertEqual(model.key, "base")
+        self.assertEqual(model.filename, "ggml-base.bin")
+        self.assertTrue(model.sha1)
+
     def test_download_model_requires_checksum(self):
         manager = ModelManager()
 

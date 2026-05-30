@@ -14,3 +14,6 @@ Transcriber-LP follows semantic versioning. The first tracked baseline starts at
 - Added macOS PyInstaller packaging metadata and runtime-library checks.
 - Added release-readiness documentation for third-party binary and model provenance.
 - Added technical review notes for portfolio and interview review.
+- Added automatic checksum-gated Base model download prompt when no model is installed.
+- Made bundled model weights opt-in for macOS packages via `TRANSCRIBER_LP_BUNDLE_MODEL=1`.
+- Added release compliance policy for binaries, model weights, and license-text obligations.

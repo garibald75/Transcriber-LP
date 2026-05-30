@@ -9,26 +9,27 @@ Transcriber-LP is a local-first macOS desktop app for creating `txt`, `srt`, and
 ## Architecture
 
 - `app/ui/` contains the PySide6 desktop interface, menus, theme handling, help dialogs, and user interaction flow.
-- `app/core/` contains transcription command construction, subprocess orchestration, model discovery, model downloads, and runtime paths.
+- `app/core/` contains transcription command construction, subprocess orchestration, model discovery, checksum-gated model downloads, and runtime paths.
 - `scripts/` contains repeatable setup and packaging helpers for macOS Apple Silicon builds.
 - `tests/` covers import stability, command construction, checksum behavior, and model manager edge cases.
 
 ## Reliability Choices
 
 - Transcription runs through local command-line tools rather than a hosted API.
-- Supported model downloads are checksum-gated before they are accepted by the app.
+- If no model is installed, the app prompts for the Base model download and accepts it only after checksum verification.
 - Runtime binaries and model weights are kept out of Git history.
 - CI compiles all Python files and runs unit tests on multiple Python versions.
 
 ## Packaging And Compliance
 
-The repository separates source code from distributable runtime inputs. `ffmpeg`, `ffprobe`, `whisper-cli`, dynamic libraries, and model files must be supplied locally under `third_party/macos/` before packaging.
+The repository separates source code from distributable runtime inputs. `ffmpeg`, `ffprobe`, `whisper-cli`, and dynamic libraries must be supplied locally under `third_party/macos/` before packaging. Model weights are not bundled by default; bundling a model is an explicit release decision controlled by `TRANSCRIBER_LP_BUNDLE_MODEL=1`.
 
 Release documentation is split by responsibility:
 
 - `docs/THIRD_PARTY_NOTICE.md` records owners, licenses, and source locations.
 - `docs/FFMPEG_BUILD.md` records exact FFmpeg build provenance.
 - `docs/MODEL_PROVENANCE.md` records exact model artifact provenance.
+- `docs/RELEASE_COMPLIANCE.md` records the release policy for binaries, models, and license texts.
 - `docs/DISTRIBUTION_CHECKLIST.md` lists checks required before publishing a release artifact.
 
 ## Known Boundaries
