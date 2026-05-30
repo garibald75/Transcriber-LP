@@ -86,6 +86,20 @@ class CommandBuilderTests(unittest.TestCase):
         self.assertIn("en", command)
         self.assertIn("-tr", command)
 
+    def test_build_whisper_command_can_save_timestamp_sidecar(self):
+        command = build_whisper_command(
+            model_file=Path("ggml-base.bin"),
+            wav_path=Path("/tmp/input.wav"),
+            out_base=Path("/tmp/output"),
+            output_format="txt",
+            source_language="auto",
+            target_language="as_source",
+            save_timestamps=True,
+        )
+
+        self.assertIn("-otxt", command)
+        self.assertIn("-ocsv", command)
+
 
 if __name__ == "__main__":
     unittest.main()

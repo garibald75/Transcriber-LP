@@ -2,6 +2,11 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.3.1 - 2026-05-30
+
+- Added an export setting to save timestamp data as a CSV sidecar independent of the selected transcript format.
+- Persisted the timestamp export preference in user settings.
+
 ## 0.3.0 - 2026-05-30
 
 - Added batch import with a queue for sequentially transcribing multiple media files.

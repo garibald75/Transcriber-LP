@@ -1,10 +1,10 @@
 # Transcriber-LP
 
 [![CI](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml/badge.svg)](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.3.0-blue)
+![Version](https://img.shields.io/badge/version-0.3.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Current version: `0.3.0`
+Current version: `0.3.1`
 
 A local-first macOS transcription app built with PySide6, PyInstaller, FFmpeg, and `whisper.cpp`.
 
@@ -33,6 +33,7 @@ The repository intentionally does not commit runtime binaries, model weights, vi
 - visible `Browse file...` button for media selection
 - batch import queue for sequential transcription of multiple media files
 - output formats: `txt`, `srt`, `vtt`
+- optional timestamp CSV sidecar export independent of the selected transcript format
 - source language selection or auto-detect
 - translate to English or keep the source language
 - model manager with automatic checksum-gated Base model download when no model is installed

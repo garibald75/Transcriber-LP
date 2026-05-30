@@ -1,6 +1,6 @@
 # Transcriber-LP User Manual
 
-Current version: `0.3.0`
+Current version: `0.3.1`
 
 Versioning starts at `0.1.0` for the first tracked public-ready baseline. The source of truth is `app/version.py`.
 
@@ -21,8 +21,9 @@ For a packaged build, open `dist/Transcriber-LP.app`.
 3. Select a model from the model list.
 4. Leave source language on `Auto-detect`, or choose a known language.
 5. Keep the original language, or choose `Translate to English`.
-6. Click `Transcribe`.
-7. Choose the output folder when prompted.
+6. Enable `Save timestamps` if you also want a timestamp CSV sidecar.
+7. Click `Transcribe`.
+8. Choose the output folder when prompted.
 
 Use `Stop` to cancel a running transcription.
 
@@ -33,6 +34,10 @@ Use `Add files` in the Batch Queue to import multiple audio or video files. Clic
 Each queue item shows its status while the batch runs. Completed items keep their generated output path; select a completed item and click `Retrieve output` to load the source media in the preview player and open the generated transcript in the editor.
 
 If multiple queued files share the same base filename, batch output names include a numeric suffix to avoid overwriting earlier files.
+
+## Timestamp Export
+
+`Save timestamps` creates an additional `.csv` sidecar with timestamp data while keeping the selected transcript format unchanged. This is useful when the main export is `txt` but review, audit, or downstream tooling still needs segment timing.
 
 ## Review and Correct a Transcript
 

@@ -28,6 +28,7 @@ def build_whisper_command(
     output_format: str,
     source_language: str | None,
     target_language: str | None,
+    save_timestamps: bool = False,
     executable: Path | str = "whisper-cli",
 ) -> list[str]:
     fmt_flag = {
@@ -57,5 +58,8 @@ def build_whisper_command(
 
     if task == "translate":
         command.append("-tr")
+
+    if save_timestamps:
+        command.append("-ocsv")
 
     return command
