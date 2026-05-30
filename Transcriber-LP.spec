@@ -33,7 +33,14 @@ if bundle_model:
     datas.append((str(base_model), "vendor/models"))
 
 
-hiddenimports = ["PySide6.QtCore", "PySide6.QtGui", "PySide6.QtWidgets", "app.core.transcriber"] + collect_submodules("app") + collect_submodules("app.core")
+hiddenimports = [
+    "PySide6.QtCore",
+    "PySide6.QtGui",
+    "PySide6.QtWidgets",
+    "PySide6.QtMultimedia",
+    "PySide6.QtMultimediaWidgets",
+    "app.core.transcriber",
+] + collect_submodules("app") + collect_submodules("app.core")
 
 a = Analysis(
     ['app/main.py'],

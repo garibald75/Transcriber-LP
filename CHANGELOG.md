@@ -2,6 +2,13 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.2.0 - 2026-05-30
+
+- Added an in-app media preview player for checking the source audio or video during review.
+- Added a quick transcript editor that opens completed `txt`, `srt`, and `vtt` outputs for correction.
+- Added direct save support for corrected transcript files.
+- Updated packaging metadata to include Qt multimedia modules.
+
 ## 0.1.0 - 2026-05-30
 
 - Added the first public-ready repository baseline.
