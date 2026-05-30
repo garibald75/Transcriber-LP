@@ -21,7 +21,7 @@ The UI keeps a small atomic design token layer for shared control metrics such a
 - Batch import processes queued media sequentially, which keeps resource use predictable and makes per-item logging easier to inspect.
 - The review workflow keeps the source media preview and transcript editor in the same window so a user can correct recognition errors or typos immediately after generation.
 - Optional timestamp export is implemented as a sidecar output, so users can keep a human-readable transcript format while preserving segment timing separately.
-- If no model is installed, the app prompts for the Base model download and accepts it only after checksum verification.
+- If no model is installed, the `Current Model` placeholder opens Settings for a user-initiated model download and accepts it only after checksum verification.
 - Runtime binaries and model weights are kept out of Git history.
 - CI compiles all Python files and runs unit tests on multiple Python versions.
 

@@ -3,13 +3,14 @@ import time
 
 from pathlib import Path
 
-from PySide6.QtCore import QEvent, QItemSelectionModel, QObject, QSettings, Qt, QThreadPool, QTimer
+from PySide6.QtCore import QEvent, QItemSelectionModel, QObject, QSettings, Qt, QThreadPool
 from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QPainter, QPalette, QPen
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QDialog,
     QFileDialog,
     QFormLayout,
     QFrame,
@@ -250,6 +251,84 @@ class ComboItemDelegate(QStyledItemDelegate):
 
 
 class DesignComboBox(QComboBox):
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.empty_click_handler = None
+        self._popup_frame = None
+        self._popup_list = None
+
+    def mousePressEvent(self, event) -> None:
+        if self.currentData() is None and self.empty_click_handler is not None:
+            self.empty_click_handler()
+            return
+        super().mousePressEvent(event)
+
+    def showPopup(self) -> None:
+        if self.currentData() is None and self.empty_click_handler is not None:
+            self.empty_click_handler()
+            return
+        if self.count() == 0:
+            return
+
+        frame = self._ensure_popup_frame()
+        popup_list = self._popup_list
+        popup_list.clear()
+        for row in range(self.count()):
+            item = QListWidgetItem(self.itemText(row))
+            item.setData(Qt.ItemDataRole.UserRole, row)
+            popup_list.addItem(item)
+
+        popup_list.setCurrentRow(max(0, self.currentIndex()))
+        item_height = DESIGN_TOKENS["control"]["combo_popup_item_height"] + 14
+        visible_rows = min(self.count(), self.maxVisibleItems())
+        popup_height = max(1, visible_rows) * item_height + DESIGN_TOKENS["control"]["combo_popup_padding"] * 2
+        frame.resize(max(self.width(), self.minimumWidth()), popup_height)
+        frame.setStyleSheet(self.window().styleSheet())
+        frame.move(self.mapToGlobal(self.rect().bottomLeft()))
+        frame.show()
+        frame.raise_()
+
+    def hidePopup(self) -> None:
+        if self._popup_frame is not None:
+            self._popup_frame.hide()
+        super().hidePopup()
+
+    def _ensure_popup_frame(self) -> QFrame:
+        if self._popup_frame is not None and self._popup_list is not None:
+            return self._popup_frame
+
+        frame = QFrame(self.window(), Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint | Qt.WindowType.NoDropShadowWindowHint)
+        frame.setObjectName("comboPopupFrame")
+        frame.setFrameShape(QFrame.Shape.NoFrame)
+        frame.setLineWidth(0)
+        frame.setMidLineWidth(0)
+        frame.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        frame.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        layout = QVBoxLayout(frame)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        popup_list = QListWidget(frame)
+        popup_list.setObjectName("comboPopupList")
+        popup_list.setFrameShape(QFrame.Shape.NoFrame)
+        popup_list.setLineWidth(0)
+        popup_list.setMidLineWidth(0)
+        popup_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        popup_list.setMouseTracking(True)
+        popup_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        popup_list.itemClicked.connect(self._select_popup_item)
+        layout.addWidget(popup_list)
+
+        self._popup_frame = frame
+        self._popup_list = popup_list
+        return frame
+
+    def _select_popup_item(self, item: QListWidgetItem) -> None:
+        row = item.data(Qt.ItemDataRole.UserRole)
+        if row is not None:
+            self.setCurrentIndex(int(row))
+        self.hidePopup()
+
     def paintEvent(self, event) -> None:
         super().paintEvent(event)
 
@@ -308,6 +387,9 @@ class MainWindow(QMainWindow):
         self.download_started_at = 0.0
         self.active_download_model_key: str | None = None
         self.auto_model_prompted = False
+        self.download_buttons: list[QPushButton] = []
+        self.model_settings_dialog: QDialog | None = None
+        self.model_settings_list: QListWidget | None = None
         self.settings = QSettings("Transcriber-LP", "Transcriber-LP")
         saved_theme = self.settings.value("appearance/theme", "light")
         self.theme_name = saved_theme if saved_theme in THEME_PALETTES else "light"
@@ -315,7 +397,6 @@ class MainWindow(QMainWindow):
 
         self._build_ui()
         self.refresh_models()
-        QTimer.singleShot(250, self.ensure_default_model_available)
 
     def _build_ui(self) -> None:
         menu_bar = self.menuBar()
@@ -335,6 +416,11 @@ class MainWindow(QMainWindow):
         self.dark_theme_action.triggered.connect(lambda: self.set_theme("dark"))
         self.theme_actions.addAction(self.dark_theme_action)
         theme_menu.addAction(self.dark_theme_action)
+
+        settings_menu = menu_bar.addMenu("Settings")
+        model_settings_action = QAction("Model downloads...", self)
+        model_settings_action.triggered.connect(self.show_model_settings)
+        settings_menu.addAction(model_settings_action)
 
         help_menu = menu_bar.addMenu("Help")
         help_action = QAction("Show manual", self)
@@ -490,7 +576,8 @@ class MainWindow(QMainWindow):
         add_settings_row("Timestamp export", self.save_timestamps_checkbox)
 
         self.model_combo = DesignComboBox()
-        self.model_combo.setToolTip("Select the transcription model. Models are loaded from the app bundle or downloaded models.")
+        self.model_combo.empty_click_handler = self.show_model_settings
+        self.model_combo.setToolTip("Current transcription model. If none is installed, click to open model downloads.")
         self.source_language_combo = DesignComboBox()
         self.source_language_combo.addItem("Auto-detect", "auto")
         self.source_language_combo.addItem("Italian", "it")
@@ -513,55 +600,9 @@ class MainWindow(QMainWindow):
         ):
             self._configure_combo(combo)
 
-        add_settings_row("Model", self.model_combo)
+        add_settings_row("Current Model", self.model_combo)
         add_settings_row("Source language", self.source_language_combo)
         add_settings_row("Translation target", self.target_language_combo)
-        self.model_list = QListWidget()
-        self.model_list.setMinimumHeight(64)
-        self.model_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.model_list.setToolTip("Installed and bundled models available for transcription.")
-        add_settings_row("Installed models", self.model_list)
-
-        downloads_widget = QWidget()
-        dl_grid = QGridLayout()
-        dl_grid.setContentsMargins(0, 0, 0, 0)
-        dl_grid.setHorizontalSpacing(8)
-        dl_grid.setVerticalSpacing(8)
-        downloads_widget.setLayout(dl_grid)
-        self.download_base_btn = QPushButton("Base")
-        self.download_base_btn.setProperty("role", "secondary")
-        self.download_base_btn.clicked.connect(lambda: self.download_model("base"))
-        self.download_base_btn.setToolTip("Download the small base model for faster transcription.")
-        dl_grid.addWidget(self.download_base_btn, 0, 0)
-
-        self.download_small_btn = QPushButton("Small")
-        self.download_small_btn.setProperty("role", "secondary")
-        self.download_small_btn.clicked.connect(lambda: self.download_model("small"))
-        self.download_small_btn.setToolTip("Download the small multilingual model.")
-        dl_grid.addWidget(self.download_small_btn, 0, 1)
-
-        self.download_medium_btn = QPushButton("Medium")
-        self.download_medium_btn.setProperty("role", "secondary")
-        self.download_medium_btn.clicked.connect(lambda: self.download_model("medium"))
-        self.download_medium_btn.setToolTip("Download the medium multilingual model.")
-        dl_grid.addWidget(self.download_medium_btn, 1, 0)
-
-        self.download_large_btn = QPushButton("Turbo")
-        self.download_large_btn.setProperty("role", "secondary")
-        self.download_large_btn.clicked.connect(lambda: self.download_model("large-v3-turbo-q5_0"))
-        self.download_large_btn.setToolTip("Download the large turbo quantized model.")
-        dl_grid.addWidget(self.download_large_btn, 1, 1)
-        self.download_buttons = [
-            self.download_base_btn,
-            self.download_small_btn,
-            self.download_medium_btn,
-            self.download_large_btn,
-        ]
-        for button in self.download_buttons:
-            button.setObjectName("downloadModelButton")
-            button.setMinimumWidth(DESIGN_TOKENS["control"]["model_download_min_width"])
-
-        add_settings_row("Model downloads", downloads_widget)
 
         left_layout.addWidget(settings_box)
 
@@ -838,11 +879,11 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Missing batch", "Add files to the batch queue first.")
             return
 
-        if self.model_combo.count() == 0:
+        model_key = self.current_model_key()
+        if model_key is None:
             self.ensure_default_model_available(force=True)
             return
 
-        model_key = self.model_combo.currentData()
         try:
             model_file = self.model_manager.resolve_model_path(model_key)
         except Exception as exc:
@@ -976,13 +1017,11 @@ class MainWindow(QMainWindow):
 
     def refresh_models(self) -> None:
         self.model_combo.clear()
-        self.model_list.clear()
         items = self.model_manager.available_models()
         medium_index = -1
         for idx, (key, path, source) in enumerate(items):
             display = MODEL_DEFS.get(key).label if key in MODEL_DEFS else key
             self.model_combo.addItem(f"{display} ({source})", userData=key)
-            self.model_list.addItem(QListWidgetItem(f"{display} — {source} — {path.name}"))
             if key == "medium":
                 medium_index = idx
 
@@ -990,29 +1029,120 @@ class MainWindow(QMainWindow):
             self.model_combo.setCurrentIndex(medium_index)
 
         if not items:
-            self.model_list.addItem("No model found")
+            self.model_combo.addItem("click here to download a model", userData=None)
+            self.model_combo.setCurrentIndex(0)
+
+        self.refresh_model_settings_list()
+
+    def current_model_key(self) -> str | None:
+        key = self.model_combo.currentData()
+        return str(key) if key else None
+
+    def show_model_settings(self) -> None:
+        dialog = self._ensure_model_settings_dialog()
+        self.refresh_model_settings_list()
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+    def _ensure_model_settings_dialog(self) -> QDialog:
+        if self.model_settings_dialog is not None:
+            return self.model_settings_dialog
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Settings")
+        dialog.setMinimumWidth(420)
+        dialog.setObjectName("settingsDialog")
+
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(18, 18, 18, 18)
+        layout.setSpacing(12)
+
+        model_box = QGroupBox("Model downloads")
+        model_layout = QVBoxLayout(model_box)
+        model_layout.setContentsMargins(16, 20, 16, 14)
+        model_layout.setSpacing(10)
+
+        self.model_settings_list = QListWidget()
+        self.model_settings_list.setMinimumHeight(86)
+        self.model_settings_list.setToolTip("Installed and bundled models available for transcription.")
+        model_layout.addWidget(self.model_settings_list)
+
+        downloads_widget = QWidget()
+        dl_grid = QGridLayout(downloads_widget)
+        dl_grid.setContentsMargins(0, 0, 0, 0)
+        dl_grid.setHorizontalSpacing(8)
+        dl_grid.setVerticalSpacing(8)
+
+        self.download_base_btn = QPushButton("Base")
+        self.download_base_btn.setProperty("role", "secondary")
+        self.download_base_btn.clicked.connect(lambda: self.download_model("base"))
+        self.download_base_btn.setToolTip("Download the small base model for faster transcription.")
+        dl_grid.addWidget(self.download_base_btn, 0, 0)
+
+        self.download_small_btn = QPushButton("Small")
+        self.download_small_btn.setProperty("role", "secondary")
+        self.download_small_btn.clicked.connect(lambda: self.download_model("small"))
+        self.download_small_btn.setToolTip("Download the small multilingual model.")
+        dl_grid.addWidget(self.download_small_btn, 0, 1)
+
+        self.download_medium_btn = QPushButton("Medium")
+        self.download_medium_btn.setProperty("role", "secondary")
+        self.download_medium_btn.clicked.connect(lambda: self.download_model("medium"))
+        self.download_medium_btn.setToolTip("Download the medium multilingual model.")
+        dl_grid.addWidget(self.download_medium_btn, 1, 0)
+
+        self.download_large_btn = QPushButton("Turbo")
+        self.download_large_btn.setProperty("role", "secondary")
+        self.download_large_btn.clicked.connect(lambda: self.download_model("large-v3-turbo-q5_0"))
+        self.download_large_btn.setToolTip("Download the large turbo quantized model.")
+        dl_grid.addWidget(self.download_large_btn, 1, 1)
+
+        self.download_buttons = [
+            self.download_base_btn,
+            self.download_small_btn,
+            self.download_medium_btn,
+            self.download_large_btn,
+        ]
+        for button in self.download_buttons:
+            button.setObjectName("downloadModelButton")
+            button.setMinimumWidth(DESIGN_TOKENS["control"]["model_download_min_width"])
+
+        model_layout.addWidget(downloads_widget)
+        layout.addWidget(model_box)
+
+        close_btn = QPushButton("Close")
+        close_btn.setProperty("role", "secondary")
+        close_btn.clicked.connect(dialog.close)
+        layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.model_settings_dialog = dialog
+        self._apply_theme()
+        return dialog
+
+    def refresh_model_settings_list(self) -> None:
+        if self.model_settings_list is None:
+            return
+
+        self.model_settings_list.clear()
+        items = self.model_manager.available_models()
+        if not items:
+            self.model_settings_list.addItem("No model installed")
+            return
+
+        for key, path, source in items:
+            display = MODEL_DEFS.get(key).label if key in MODEL_DEFS else key
+            self.model_settings_list.addItem(QListWidgetItem(f"{display} - {source} - {path.name}"))
 
     def ensure_default_model_available(self, force: bool = False) -> None:
-        if self.model_combo.count() > 0 or self.current_worker is not None:
+        if self.current_model_key() is not None or self.current_worker is not None:
             return
         if self.auto_model_prompted and not force:
             return
 
         self.auto_model_prompted = True
-        model = self.model_manager.default_download_model()
-        answer = QMessageBox.question(
-            self,
-            "Download transcription model",
-            (
-                "No transcription model is installed.\n\n"
-                f"Download {model.label} ({model.size_label}) now?\n"
-                "The file will be saved in your Application Support folder and verified by checksum."
-            ),
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.Yes,
-        )
-        if answer == QMessageBox.Yes:
-            self.download_model(model.key)
+        self.progress_label.setText("Download a model from Settings before transcribing.")
+        self.show_model_settings()
 
     def append_log(self, text: str) -> None:
         scroll_bar = self.log.verticalScrollBar()
@@ -1035,11 +1165,11 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Missing file", "Pick a file first.")
             return
 
-        if self.model_combo.count() == 0:
+        model_key = self.current_model_key()
+        if model_key is None:
             self.ensure_default_model_available(force=True)
             return
 
-        model_key = self.model_combo.currentData()
         try:
             model_file = self.model_manager.resolve_model_path(model_key)
         except Exception as exc:
@@ -1303,7 +1433,7 @@ class MainWindow(QMainWindow):
             "Transcriber-LP Manual:\n\n"
             "1) Seleziona un file audio o video con Browse o trascinalo nella finestra.\n"
             "2) Scegli il formato di uscita: txt, srt o vtt.\n"
-            "3) Seleziona un modello disponibile. I download dei modelli sono nel pannello Settings.\n"
+            "3) Controlla Current Model. Se non c'e un modello, clicca il placeholder per aprire Settings e scaricarlo.\n"
             "4) Opzionalmente imposta la lingua sorgente o lascia Auto-detect per la rilevazione automatica.\n"
             "5) Scegli se mantenere la lingua originale o tradurre in inglese.\n"
             "6) Abilita Save timestamps se vuoi anche un file CSV con i timestamp.\n"
@@ -1323,7 +1453,7 @@ class MainWindow(QMainWindow):
             "Note:\n"
             "- Le trascrizioni vengono salvate in ~/Library/Application Support/Transcriber-LP/outputs.\n"
             "- I modelli scaricati vengono memorizzati in ~/Library/Application Support/Transcriber-LP/models.\n"
-            "- Se non è presente nessun modello, l'app propone il download verificato del modello Base.\n"
+            "- Se non è presente nessun modello, Current Model apre Settings per scaricarne uno verificato.\n"
             "- Assicurati di avere i binari ffmpeg e whisper-cli in third_party/macos quando crei il bundle.\n"
             "- Usa solo componenti open source e conserva le attribuzioni in docs/THIRD_PARTY_NOTICE.md.\n"
         )
@@ -1785,6 +1915,50 @@ class MainWindow(QMainWindow):
                     ),
                     block("QListWidget::item", "border-radius: 7px;\npadding: 5px 7px;\nmargin: 2px;"),
                     block("QListWidget::item:selected", f"background: {c['selection_bg']};"),
+                    block(
+                        "QDialog#settingsDialog",
+                        "\n".join(
+                            [
+                                f"background: {c['app_bg']};",
+                                f"color: {c['root_text']};",
+                            ]
+                        ),
+                    ),
+                    block("QFrame#comboPopupFrame", "background: transparent;\nborder: none;"),
+                    block(
+                        "QListWidget#comboPopupList",
+                        "\n".join(
+                            [
+                                f"color: {c['input_text']};",
+                                f"background: {c['group_bg']};",
+                                "border: none;",
+                                f"border-radius: {radius['menu']}px;",
+                                "outline: 0;",
+                                f"padding: {control['combo_popup_padding']}px;",
+                                f"selection-background-color: {c['list_hover_bg']};",
+                                f"selection-color: {c['list_hover_text']};",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QListWidget#comboPopupList::item",
+                        (
+                            f"min-height: {control['combo_popup_item_height']}px;\n"
+                            f"padding: 7px {control['horizontal_padding']}px;\n"
+                            "border-radius: 6px;\n"
+                            "border: none;\n"
+                            "outline: 0;\n"
+                            "margin: 0;"
+                        ),
+                    ),
+                    block(
+                        "QListWidget#comboPopupList::item:hover",
+                        f"background: {c['list_hover_bg']};\ncolor: {c['list_hover_text']};",
+                    ),
+                    block(
+                        "QListWidget#comboPopupList::item:selected",
+                        f"background: {c['list_hover_bg']};\ncolor: {c['list_hover_text']};",
+                    ),
                     block(
                         "QProgressBar",
                         "\n".join(

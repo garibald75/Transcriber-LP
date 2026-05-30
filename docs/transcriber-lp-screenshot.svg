@@ -35,7 +35,7 @@
   <rect x="190" y="352" width="320" height="30" rx="8" fill="#ffffff" stroke="#ccd9e4"/>
   <text class="ui" x="204" y="372" font-size="13" fill="#142536">srt</text>
 
-  <text class="ui" x="46" y="411" font-size="13" font-weight="600" fill="#627486">Model</text>
+  <text class="ui" x="46" y="411" font-size="13" font-weight="600" fill="#627486">Current Model</text>
   <rect x="190" y="391" width="320" height="30" rx="8" fill="#ffffff" stroke="#ccd9e4"/>
   <text class="ui" x="204" y="411" font-size="13" fill="#142536">Medium (downloaded)</text>
 
@@ -52,9 +52,9 @@
 
   <rect x="22" y="540" width="518" height="82" rx="10" fill="#ffffff" stroke="#d8e2eb"/>
   <rect x="38" y="527" width="196" height="24" rx="8" fill="#f4f7fb"/>
-  <text class="ui" x="48" y="545" font-size="14" font-weight="700" fill="#142536">⚙ Settings: model downloads</text>
+  <text class="ui" x="48" y="545" font-size="14" font-weight="700" fill="#142536">Settings > Model downloads...</text>
   <rect x="42" y="560" width="478" height="34" rx="8" fill="#ffffff" stroke="#d7e1ea"/>
-  <text class="ui" x="54" y="582" font-size="12" fill="#263949">Medium - downloaded - ggml-medium.bin</text>
+  <text class="ui" x="54" y="582" font-size="12" fill="#263949">Installed models and checksum-verified downloads open in Settings.</text>
   <rect x="42" y="604" width="104" height="18" rx="4" fill="#f7fafc" stroke="#cddbe5"/>
   <rect x="154" y="604" width="108" height="18" rx="4" fill="#f7fafc" stroke="#cddbe5"/>
   <rect x="270" y="604" width="128" height="18" rx="4" fill="#f7fafc" stroke="#cddbe5"/>

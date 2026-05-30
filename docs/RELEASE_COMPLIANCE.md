@@ -14,7 +14,7 @@ This document is not legal advice. It records the release policy used by this re
 ## Default App Distribution Policy
 
 - Do not bundle Whisper model weights by default.
-- When no model is installed, the app prompts the user to download the Base model into the user's Application Support directory.
+- When no model is installed, `Current Model` shows a placeholder that opens Settings for a user-initiated model download into the user's Application Support directory.
 - Accept downloaded models only after checksum verification.
 - Bundle `ffmpeg`, `ffprobe`, `whisper-cli`, and required dynamic libraries only when their exact provenance and license obligations are documented.
 
