@@ -18,3 +18,4 @@ Transcriber-LP follows semantic versioning. The first tracked baseline starts at
 - Made bundled model weights opt-in for macOS packages via `TRANSCRIBER_LP_BUNDLE_MODEL=1`.
 - Added release compliance policy for binaries, model weights, and license-text obligations.
 - Fixed source language command construction so `Auto-detect` is passed explicitly to `whisper-cli` as `-l auto`.
+- Added a persistent `Auto-scroll` control for the runtime log panel.
