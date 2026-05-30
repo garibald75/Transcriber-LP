@@ -43,7 +43,7 @@ Also verify these UI interaction states:
 - Each dropdown highlights the option currently under the mouse.
 - The log `Auto-scroll` checkbox shows a visible checked marker and preserves scroll position when disabled.
 - The media preview loads the selected source and the transcript editor opens generated `txt`, `srt`, and `vtt` files for quick correction.
-- `Save changes` writes transcript edits back to the generated file without changing the media source.
+- `Save changes` shows an overwrite confirmation before writing transcript edits back to the generated file.
 - Window resizing keeps the main workflow, batch queue, preview player, editor, and log usable without overlapping controls.
 
 ### Batch Import
