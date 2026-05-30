@@ -77,6 +77,8 @@ python -m PyInstaller \
   --clean \
   Transcriber-LP.spec
 
+xattr -cr dist/Transcriber-LP.app 2>/dev/null || true
 find dist/Transcriber-LP.app -xattrname com.apple.FinderInfo -exec xattr -d com.apple.FinderInfo {} + 2>/dev/null || true
+find dist/Transcriber-LP.app -xattrname com.apple.FinderInfo -exec xattr -d -s com.apple.FinderInfo {} + 2>/dev/null || true
 
 echo "Built dist/Transcriber-LP.app"

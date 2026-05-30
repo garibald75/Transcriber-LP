@@ -20,15 +20,15 @@ Transcriber-LP does not commit `ffmpeg` or `ffprobe` binaries. If a packaged app
 These binaries are not committed to the repository. They were used only to validate a local macOS Apple Silicon package.
 
 - Binary provider: Martin Riedl's FFmpeg Build Server
-- FFmpeg / FFprobe version: 8.1.1-https://www.martin-riedl.de
+- FFmpeg / FFprobe version: N-124530-gf435ce22e1-https://www.martin-riedl.de
 - Download URLs:
-  - https://ffmpeg.martin-riedl.de/redirect/latest/macos/arm64/release/ffmpeg.zip
-  - https://ffmpeg.martin-riedl.de/redirect/latest/macos/arm64/release/ffprobe.zip
-- Build date: upstream page reports 14 May 2026 for macOS Apple Silicon release builds
+  - https://ffmpeg.martin-riedl.de/redirect/latest/macos/arm64/snapshot/ffmpeg.zip
+  - https://ffmpeg.martin-riedl.de/redirect/latest/macos/arm64/snapshot/ffprobe.zip
+- Build date: latest upstream macOS Apple Silicon snapshot available on 30 May 2026
 - Target architecture: macOS Apple Silicon arm64
 - SHA-256:
-  - ffmpeg: `ef4fe121377039053b0d7bed4a9aa46e7912918f5ba6424a1dd155f4eed625b0`
-  - ffprobe: `3ec76ddd72068162294249465c36257d6c1add564f9b078e31e173837832967d`
+  - ffmpeg: `82964dcd9be84ff282ae2c66858cdbf1547a2665bffba16877422627beec958b`
+  - ffprobe: `b5b2944ded22836227ca65ea2360c83f390b3435df68162cc153a1fb0f1439d3`
 - Configure flags: includes `--enable-gpl`, `--enable-openssl`, `--enable-libx264`, `--enable-libx265`, `--enable-libmp3lame`, and other external libraries reported by `ffmpeg -version`
 - License classification: GPL build because `--enable-gpl` is present
 - Corresponding source URL: https://ffmpeg.org/download.html and the provider's build-script link from https://ffmpeg.martin-riedl.de/
