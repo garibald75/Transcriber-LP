@@ -13,6 +13,8 @@ Transcriber-LP is a local-first macOS desktop app for creating `txt`, `srt`, and
 - `scripts/` contains repeatable setup and packaging helpers for macOS Apple Silicon builds.
 - `tests/` covers import stability, command construction, timestamp export flags, checksum behavior, model manager edge cases, and batch output naming helpers.
 
+The UI keeps a small atomic design token layer for shared control metrics such as field height, radius, padding, dropdown width, and popup item spacing. This keeps Settings controls visually aligned across light and dark themes.
+
 ## Reliability Choices
 
 - Transcription runs through local command-line tools rather than a hosted API.

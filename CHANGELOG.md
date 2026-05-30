@@ -2,6 +2,11 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.2 - 2026-05-30
+
+- Unified dropdown controls with shared atomic design tokens for height, spacing, hover, and popup item sizing.
+- Improved Settings dropdown readability so model, language, format, and translation selectors are less compressed.
+
 ## 0.4.1 - 2026-05-30
 
 - Added a gears icon to the Settings panel that now contains model management controls.

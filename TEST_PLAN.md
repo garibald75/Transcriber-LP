@@ -40,7 +40,7 @@ Verify file selection, drag and drop, output format selection, timestamp sidecar
 Also verify these UI interaction states:
 
 - `Browse file...` looks and behaves like a clickable button, including hover feedback.
-- Each dropdown highlights the option currently under the mouse.
+- Each dropdown is readable, has enough vertical spacing, and highlights the option currently under the mouse.
 - The log `Auto-scroll` checkbox shows a visible checked marker and preserves scroll position when disabled.
 - The media preview loads the selected source and the transcript editor opens generated `txt`, `srt`, and `vtt` files for quick correction.
 - `Save changes` shows an overwrite confirmation before writing transcript edits back to the generated file.

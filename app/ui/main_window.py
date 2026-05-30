@@ -168,6 +168,21 @@ THEME_PALETTES = {
     },
 }
 
+DESIGN_TOKENS = {
+    "radius": {
+        "control": 8,
+        "menu": 8,
+    },
+    "control": {
+        "min_height": 34,
+        "horizontal_padding": 12,
+        "combo_arrow_width": 36,
+        "combo_min_width": 190,
+        "combo_popup_item_height": 34,
+        "combo_popup_padding": 8,
+    },
+}
+
 
 class XCheckBox(QCheckBox):
     def paintEvent(self, event) -> None:
@@ -364,7 +379,7 @@ class MainWindow(QMainWindow):
         settings_layout = QFormLayout(settings_box)
         settings_layout.setContentsMargins(16, 20, 16, 14)
         settings_layout.setHorizontalSpacing(14)
-        settings_layout.setVerticalSpacing(8)
+        settings_layout.setVerticalSpacing(10)
         settings_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
 
         self.output_combo = QComboBox()
@@ -1237,10 +1252,20 @@ class MainWindow(QMainWindow):
         return str(value).strip().lower() not in {"0", "false", "no", "off"}
 
     def _configure_combo(self, combo: QComboBox) -> None:
+        control = DESIGN_TOKENS["control"]
         combo.setCursor(Qt.CursorShape.PointingHandCursor)
+        combo.setMinimumHeight(control["min_height"])
+        combo.setMinimumWidth(control["combo_min_width"])
+        combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        combo.setMaxVisibleItems(10)
         combo.view().setCursor(Qt.CursorShape.PointingHandCursor)
         combo.view().setMouseTracking(True)
+        combo.view().viewport().setMouseTracking(True)
+        combo.view().viewport().setAttribute(Qt.WidgetAttribute.WA_Hover, True)
         combo.view().setUniformItemSizes(True)
+        combo.view().setMinimumWidth(control["combo_min_width"])
+        if hasattr(combo.view(), "setSpacing"):
+            combo.view().setSpacing(2)
 
     def _set_download_controls_enabled(self, enabled: bool) -> None:
         for button in getattr(self, "download_buttons", []):
@@ -1265,6 +1290,8 @@ class MainWindow(QMainWindow):
 
     def _apply_theme(self) -> None:
         c = THEME_PALETTES[self.theme_name]
+        radius = DESIGN_TOKENS["radius"]
+        control = DESIGN_TOKENS["control"]
 
         def block(selector: str, body: str) -> str:
             return f"{selector} {{\n{body}\n}}\n"
@@ -1304,7 +1331,7 @@ class MainWindow(QMainWindow):
                                 f"background: {c['menu_panel']};",
                                 f"color: {c['root_text']};",
                                 f"border: 1px solid {c['menu_border']};",
-                                "border-radius: 8px;",
+                                f"border-radius: {radius['menu']}px;",
                                 "padding: 6px;",
                             ]
                         ),
@@ -1480,12 +1507,16 @@ class MainWindow(QMainWindow):
                         "QComboBox",
                         "\n".join(
                             [
-                                "min-height: 28px;",
+                                f"min-height: {control['min_height']}px;",
                                 f"color: {c['input_text']};",
                                 f"background: {c['input_bg']};",
                                 f"border: 1px solid {c['input_border']};",
-                                "border-radius: 8px;",
-                                "padding: 4px 30px 4px 10px;",
+                                f"border-radius: {radius['control']}px;",
+                                (
+                                    f"padding: 6px {control['combo_arrow_width']}px "
+                                    f"6px {control['horizontal_padding']}px;"
+                                ),
+                                "font-weight: 600;",
                             ]
                         ),
                     ),
@@ -1497,7 +1528,7 @@ class MainWindow(QMainWindow):
                         "QComboBox:focus",
                         f"border-color: {c['primary_border']};\nbackground: {c['input_hover_bg']};",
                     ),
-                    block("QComboBox::drop-down", "width: 28px;\nborder: none;"),
+                    block("QComboBox::drop-down", f"width: {control['combo_arrow_width']}px;\nborder: none;"),
                     block(
                         "QComboBox::down-arrow",
                         "\n".join(
@@ -1521,13 +1552,19 @@ class MainWindow(QMainWindow):
                                 f"selection-background-color: {c['selection_bg']};",
                                 f"selection-color: {c['selection_text']};",
                                 f"border: 1px solid {c['input_border']};",
+                                f"border-radius: {radius['menu']}px;",
                                 "outline: 0;",
+                                f"padding: {control['combo_popup_padding']}px;",
                             ]
                         ),
                     ),
                     block(
                         "QComboBox QAbstractItemView::item",
-                        "min-height: 26px;\npadding: 5px 10px;",
+                        (
+                            f"min-height: {control['combo_popup_item_height']}px;\n"
+                            f"padding: 7px {control['horizontal_padding']}px;\n"
+                            "border-radius: 6px;"
+                        ),
                     ),
                     block(
                         "QComboBox QAbstractItemView::item:hover",
