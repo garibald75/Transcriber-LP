@@ -22,6 +22,8 @@ datas = [
     (str(root / "docs" / "DISTRIBUTION_CHECKLIST.md"), "docs"),
 ]
 
+datas.extend((str(path), "vendor") for path in sorted(vendor.glob("*.dylib")))
+
 
 
 

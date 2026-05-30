@@ -19,6 +19,19 @@ if [[ ! -f "third_party/macos/whisper-cli" ]]; then
   exit 1
 fi
 
+for dylib in \
+  libwhisper.1.dylib \
+  libggml.0.dylib \
+  libggml-base.0.dylib \
+  libggml-cpu.0.dylib \
+  libggml-blas.0.dylib
+do
+  if [[ ! -e "third_party/macos/$dylib" ]]; then
+    echo "Missing third_party/macos/$dylib"
+    exit 1
+  fi
+done
+
 if [[ ! -f "third_party/macos/models/ggml-base.bin" ]]; then
   echo "Missing third_party/macos/models/ggml-base.bin"
   exit 1
@@ -66,5 +79,7 @@ python -m PyInstaller \
   --noconfirm \
   --clean \
   Transcriber-LP.spec
+
+find dist/Transcriber-LP.app -xattrname com.apple.FinderInfo -exec xattr -d com.apple.FinderInfo {} +
 
 echo "Built dist/Transcriber-LP.app"

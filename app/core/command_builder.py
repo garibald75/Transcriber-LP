@@ -48,6 +48,7 @@ def build_whisper_command(
         str(wav_path),
         "-of",
         str(out_base),
+        "--no-gpu",
         *fmt_flag,
     ]
 
