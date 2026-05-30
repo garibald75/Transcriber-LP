@@ -30,7 +30,7 @@ The repository intentionally does not commit runtime binaries, model weights, vi
 ## Features
 
 - drag & drop media input
-- file browser selection
+- visible `Browse file...` button for media selection
 - output formats: `txt`, `srt`, `vtt`
 - source language selection or auto-detect
 - translate to English or keep the source language
@@ -59,6 +59,8 @@ The source of truth is `app/version.py`. macOS bundle metadata is read from that
 The app defaults to the light theme. Use `View > Theme > Light` or `View > Theme > Dark` to switch the interface theme at runtime.
 
 The selected theme is stored in the user settings and restored on the next launch. The theme system is palette-driven in `app/ui/main_window.py`, so new themes can be added by defining another entry in `THEME_PALETTES` and exposing it through the theme menu.
+
+Interactive controls use explicit hover and focus states. Dropdown menus highlight the item under the mouse, the media browser control is styled as a button, and the log panel includes a persistent `Auto-scroll` checkbox with a visible checked marker.
 
 ## Language handling
 

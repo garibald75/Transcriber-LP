@@ -16,7 +16,7 @@ For a packaged build, open `dist/Transcriber-LP.app`.
 
 ## Transcribe a File
 
-1. Drag an audio/video file into the drop area, or use `Browse`.
+1. Drag an audio/video file into the drop area, or use `Browse file...`.
 2. Choose the output format: `txt`, `srt`, or `vtt`.
 3. Select a model from the model list.
 4. Leave source language on `Auto-detect`, or choose a known language.
@@ -37,6 +37,10 @@ If the recording language is known, choose it directly. For example, Italian aud
 Transcriber-LP starts with the light theme by default.
 
 Use `View > Theme > Light` or `View > Theme > Dark` to switch the interface while the app is running. The selected theme is saved in user settings and restored on the next launch.
+
+Dropdown menus highlight the option under the mouse. The `Browse file...` control is intentionally styled as a primary file-picking button so it is distinguishable from status text and input fields.
+
+The log panel includes an `Auto-scroll` checkbox in the log header. When enabled, new log output keeps the panel pinned to the latest line. When disabled, the current scroll position is preserved so older output can be read while work continues. The checkbox uses a visible `x` marker when selected.
 
 ## Models
 

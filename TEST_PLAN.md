@@ -36,6 +36,12 @@ python -m app.main
 
 Verify file selection, drag and drop, output format selection, model selection, theme switching, `Transcribe`, `Stop`, and the Help menu.
 
+Also verify these UI interaction states:
+
+- `Browse file...` looks and behaves like a clickable button, including hover feedback.
+- Each dropdown highlights the option currently under the mouse.
+- The log `Auto-scroll` checkbox shows a visible checked marker and preserves scroll position when disabled.
+
 ### macOS Bundle
 
 Prepare local runtime inputs under `third_party/macos/`, then run:
