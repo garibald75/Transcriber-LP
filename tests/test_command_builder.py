@@ -49,6 +49,7 @@ class CommandBuilderTests(unittest.TestCase):
         self.assertIn(str(wav_path), command)
         self.assertIn("-of", command)
         self.assertIn(str(out_base), command)
+        self.assertIn("--no-gpu", command)
         self.assertIn("-otxt", command)
 
     def test_build_whisper_command_accepts_explicit_executable(self):
