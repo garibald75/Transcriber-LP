@@ -1,59 +1,75 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="720" viewBox="0 0 1080 720" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="640" viewBox="0 0 1320 640" role="img" aria-labelledby="title desc">
   <title id="title">Transcriber-LP desktop UI screenshot</title>
-  <desc id="desc">A screenshot-style preview of the Transcriber-LP macOS transcription interface.</desc>
-  <rect width="1080" height="720" fill="#f3f5f7"/>
-  <rect x="0" y="0" width="1080" height="34" fill="#e7eaee"/>
+  <desc id="desc">A screenshot-style preview of the Transcriber-LP light theme with a compact wide desktop layout.</desc>
+  <defs>
+    <style>
+      .ui { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .mono { font-family: "SFMono-Regular", Menlo, Consolas, monospace; }
+    </style>
+  </defs>
+
+  <rect width="1320" height="640" fill="#f4f7fb"/>
+  <rect x="0" y="0" width="1320" height="34" fill="#eef3f8"/>
   <circle cx="20" cy="17" r="6" fill="#ff5f57"/>
   <circle cx="40" cy="17" r="6" fill="#ffbd2e"/>
   <circle cx="60" cy="17" r="6" fill="#28c840"/>
-  <text x="540" y="22" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#30343b">Transcriber-LP</text>
+  <text class="ui" x="660" y="22" text-anchor="middle" font-size="13" font-weight="600" fill="#243545">Transcriber-LP 0.1.0</text>
 
-  <rect x="22" y="56" width="412" height="642" rx="8" fill="#ffffff" stroke="#d5dae1"/>
-  <rect x="456" y="56" width="602" height="642" rx="8" fill="#ffffff" stroke="#d5dae1"/>
+  <text class="ui" x="22" y="74" font-size="24" font-weight="700" fill="#102131">Transcriber-LP</text>
+  <text class="ui" x="22" y="96" font-size="13" fill="#647789">Offline media transcription for clean text and subtitles</text>
 
-  <rect x="48" y="82" width="360" height="118" rx="8" fill="#fbfcfd" stroke="#8a95a3" stroke-width="2" stroke-dasharray="9 7"/>
-  <text x="228" y="134" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="21" font-weight="600" fill="#29313d">Drop video/audio here</text>
-  <text x="228" y="164" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" fill="#687382">or click Browse</text>
+  <rect x="22" y="118" width="518" height="112" rx="14" fill="#edf8fb" stroke="#86b7c5" stroke-width="2" stroke-dasharray="9 7"/>
+  <text class="ui" x="281" y="181" text-anchor="middle" font-size="18" font-weight="700" fill="#0d5d67">Drop audio or video</text>
 
-  <rect x="48" y="216" width="360" height="34" rx="6" fill="#eff3f8" stroke="#c7ced8"/>
-  <text x="228" y="238" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" fill="#1f2937">Browse...</text>
-  <text x="48" y="278" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#566171">~/Movies/sample-interview.mov</text>
+  <rect x="22" y="242" width="518" height="30" rx="8" fill="#f7fafc" stroke="#cddbe5"/>
+  <text class="ui" x="281" y="262" text-anchor="middle" font-size="13" font-weight="650" fill="#203140">Browse...</text>
 
-  <rect x="48" y="304" width="360" height="174" rx="8" fill="#fbfcfd" stroke="#d5dae1"/>
-  <text x="66" y="330" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600" fill="#29313d">Transcription</text>
-  <text x="66" y="365" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#566171">Output format</text>
-  <rect x="216" y="344" width="166" height="32" rx="5" fill="#ffffff" stroke="#c7ced8"/>
-  <text x="232" y="365" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#1f2937">srt</text>
-  <text x="66" y="405" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#566171">Model</text>
-  <rect x="216" y="384" width="166" height="32" rx="5" fill="#ffffff" stroke="#c7ced8"/>
-  <text x="232" y="405" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#1f2937">Medium (downloaded)</text>
-  <text x="66" y="445" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#566171">Source language</text>
-  <rect x="216" y="424" width="166" height="32" rx="5" fill="#ffffff" stroke="#c7ced8"/>
-  <text x="232" y="445" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#1f2937">Auto-detect</text>
+  <rect x="22" y="282" width="518" height="32" rx="8" fill="#ffffff" stroke="#d7e1ea"/>
+  <text class="ui" x="34" y="303" font-size="13" fill="#526678">~/Movies/sample-interview.mov</text>
 
-  <rect x="48" y="494" width="112" height="36" rx="6" fill="#2563eb"/>
-  <text x="104" y="517" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" font-weight="600" fill="#ffffff">Transcribe</text>
-  <rect x="170" y="494" width="84" height="36" rx="6" fill="#eff3f8" stroke="#c7ced8"/>
-  <text x="212" y="517" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" fill="#29313d">Stop</text>
-  <rect x="264" y="494" width="144" height="36" rx="6" fill="#eff3f8" stroke="#c7ced8"/>
-  <text x="336" y="517" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" fill="#29313d">Open outputs</text>
+  <rect x="22" y="332" width="518" height="146" rx="10" fill="#ffffff" stroke="#d8e2eb"/>
+  <rect x="38" y="319" width="104" height="24" rx="8" fill="#f4f7fb"/>
+  <text class="ui" x="48" y="337" font-size="14" font-weight="700" fill="#142536">Transcription</text>
 
-  <rect x="48" y="548" width="360" height="92" rx="8" fill="#fbfcfd" stroke="#d5dae1"/>
-  <text x="66" y="574" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600" fill="#29313d">Model Manager</text>
-  <text x="66" y="604" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#566171">Medium - downloaded - ggml-medium.bin</text>
-  <text x="66" y="626" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#566171">Base - bundled - ggml-base.bin</text>
+  <text class="ui" x="46" y="372" font-size="13" font-weight="600" fill="#627486">Output format</text>
+  <rect x="190" y="352" width="320" height="30" rx="8" fill="#ffffff" stroke="#ccd9e4"/>
+  <text class="ui" x="204" y="372" font-size="13" fill="#142536">srt</text>
 
-  <rect x="48" y="658" width="360" height="12" rx="6" fill="#d8dde5"/>
-  <rect x="48" y="658" width="360" height="12" rx="6" fill="#34a853"/>
-  <text x="48" y="690" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#566171">Ready</text>
+  <text class="ui" x="46" y="411" font-size="13" font-weight="600" fill="#627486">Model</text>
+  <rect x="190" y="391" width="320" height="30" rx="8" fill="#ffffff" stroke="#ccd9e4"/>
+  <text class="ui" x="204" y="411" font-size="13" fill="#142536">Medium (downloaded)</text>
 
-  <text x="484" y="90" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600" fill="#29313d">Log</text>
-  <rect x="484" y="110" width="546" height="558" rx="6" fill="#111827"/>
-  <text x="508" y="146" font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#c7d2fe">Selected: ~/Movies/sample-interview.mov</text>
-  <text x="508" y="176" font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#d1d5db">=== TRANSCRIBER START ===</text>
-  <text x="508" y="206" font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#d1d5db">ffmpeg: third_party/macos/ffmpeg</text>
-  <text x="508" y="236" font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#d1d5db">whisper-cli: third_party/macos/whisper-cli</text>
-  <text x="508" y="266" font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#d1d5db">Language behavior: auto-detect</text>
-  <text x="508" y="296" font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#d1d5db">Output format: srt</text>
-  <text x="508" y="326" font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#86efac">Ready to transcribe.</text>
+  <text class="ui" x="46" y="450" font-size="13" font-weight="600" fill="#627486">Source language</text>
+  <rect x="190" y="430" width="320" height="30" rx="8" fill="#ffffff" stroke="#ccd9e4"/>
+  <text class="ui" x="204" y="450" font-size="13" fill="#142536">Auto-detect</text>
+
+  <rect x="22" y="494" width="164" height="30" rx="8" fill="#1cc79a" stroke="#18b58c"/>
+  <text class="ui" x="104" y="514" text-anchor="middle" font-size="13" font-weight="700" fill="#06251e">Transcribe</text>
+  <rect x="196" y="494" width="164" height="30" rx="8" fill="#c83d55" stroke="#b9344b"/>
+  <text class="ui" x="278" y="514" text-anchor="middle" font-size="13" font-weight="700" fill="#fff7f8">Stop</text>
+  <rect x="370" y="494" width="170" height="30" rx="8" fill="#f7fafc" stroke="#cddbe5"/>
+  <text class="ui" x="455" y="514" text-anchor="middle" font-size="13" font-weight="650" fill="#203140">Open outputs</text>
+
+  <rect x="22" y="540" width="518" height="82" rx="10" fill="#ffffff" stroke="#d8e2eb"/>
+  <rect x="38" y="527" width="112" height="24" rx="8" fill="#f4f7fb"/>
+  <text class="ui" x="48" y="545" font-size="14" font-weight="700" fill="#142536">Model Manager</text>
+  <rect x="42" y="560" width="478" height="34" rx="8" fill="#ffffff" stroke="#d7e1ea"/>
+  <text class="ui" x="54" y="582" font-size="12" fill="#263949">Medium - downloaded - ggml-medium.bin</text>
+  <rect x="42" y="604" width="104" height="18" rx="4" fill="#f7fafc" stroke="#cddbe5"/>
+  <rect x="154" y="604" width="108" height="18" rx="4" fill="#f7fafc" stroke="#cddbe5"/>
+  <rect x="270" y="604" width="128" height="18" rx="4" fill="#f7fafc" stroke="#cddbe5"/>
+  <rect x="406" y="604" width="114" height="18" rx="4" fill="#f7fafc" stroke="#cddbe5"/>
+
+  <text class="ui" x="576" y="130" font-size="15" font-weight="700" fill="#142536">Log</text>
+  <rect x="576" y="144" width="722" height="478" rx="10" fill="#ffffff" stroke="#d7e1ea"/>
+  <text class="mono" x="598" y="180" font-size="13" fill="#263949">Selected: ~/Movies/sample-interview.mov</text>
+  <text class="mono" x="598" y="210" font-size="13" fill="#263949">=== TRANSCRIBER START ===</text>
+  <text class="mono" x="598" y="240" font-size="13" fill="#526678">ffmpeg: third_party/macos/ffmpeg</text>
+  <text class="mono" x="598" y="270" font-size="13" fill="#526678">whisper-cli: third_party/macos/whisper-cli</text>
+  <text class="mono" x="598" y="300" font-size="13" fill="#526678">Language behavior: auto-detect</text>
+  <text class="mono" x="598" y="330" font-size="13" fill="#526678">Output format: srt</text>
+  <text class="mono" x="598" y="360" font-size="13" fill="#0aa37f">Ready to transcribe.</text>
+
+  <rect x="576" y="90" width="152" height="28" rx="8" fill="#ffffff" stroke="#d7e1ea"/>
+  <text class="ui" x="592" y="109" font-size="12" font-weight="600" fill="#142536">Theme: Light</text>
 </svg>
