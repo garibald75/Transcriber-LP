@@ -2,6 +2,11 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.13 - 2026-05-31
+
+- Removed the subtitle under the app title to reclaim vertical space.
+- Increased the initial Media Preview height in the review splitter.
+
 ## 0.4.12 - 2026-05-31
 
 - Added checkmarks for current dropdown items without treating them as hover-selected.
