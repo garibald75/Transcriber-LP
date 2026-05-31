@@ -465,6 +465,7 @@ class MainWindow(QMainWindow):
         self.current_worker = None
         self.current_mode: str | None = None
         self.current_transcript_path: Path | None = None
+        self.media_loaded = False
         self.download_started_at = 0.0
         self.active_download_model_key: str | None = None
         self.auto_model_prompted = False
@@ -549,14 +550,13 @@ class MainWindow(QMainWindow):
         self.drop_zone.setToolTip("Drag and drop a media file here, or click Browse to select one.")
         left_layout.addWidget(self.drop_zone, stretch=1)
 
-        browse_btn = QPushButton("Browse file…")
-        browse_btn.setObjectName("browseButton")
-        browse_btn.setProperty("role", "secondary")
-        browse_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        browse_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton))
-        browse_btn.clicked.connect(self.browse_file)
-        browse_btn.setToolTip("Open a file selector to choose the audio or video file to transcribe.")
-        left_layout.addWidget(browse_btn)
+        self.browse_btn = QPushButton("Browse file…")
+        self.browse_btn.setObjectName("browseButton")
+        self.browse_btn.setProperty("role", "secondary")
+        self.browse_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton))
+        self.browse_btn.clicked.connect(self.browse_file)
+        self.browse_btn.setToolTip("Open a file selector to choose the audio or video file to transcribe.")
+        left_layout.addWidget(self.browse_btn)
 
         self.file_label = QLabel("No file selected")
         self.file_label.setObjectName("fileLabel")
@@ -866,12 +866,14 @@ class MainWindow(QMainWindow):
         splitter.setStretchFactor(0, 2)
         splitter.setStretchFactor(1, 3)
         self.set_theme(self.theme_name, persist=False)
+        self.sync_action_controls()
 
     def set_selected_file(self, path: Path) -> None:
         self.selected_file = path
         self.file_label.setText(str(path))
         self.append_log(f"Selected: {path}")
         self.load_media(path)
+        self.sync_action_controls()
 
     def browse_file(self) -> None:
         file_path, _ = QFileDialog.getOpenFileName(
@@ -935,7 +937,7 @@ class MainWindow(QMainWindow):
 
         if self.batch_items:
             self.batch_list.setCurrentRow(max(0, min(current_row, len(self.batch_items) - 1)))
-        self.sync_batch_controls()
+        self.sync_action_controls()
 
     def on_batch_selection_changed(self) -> None:
         row = self.batch_list.currentRow()
@@ -943,20 +945,47 @@ class MainWindow(QMainWindow):
             path = Path(self.batch_items[row]["path"])
             if path.exists():
                 self.load_media(path)
-        self.sync_batch_controls()
+        self.sync_action_controls()
 
     def sync_batch_controls(self) -> None:
+        self.sync_action_controls()
+
+    def sync_action_controls(self) -> None:
         has_items = bool(self.batch_items)
         row = self.batch_list.currentRow()
         has_selection = 0 <= row < len(self.batch_items)
         selected_output = self.batch_items[row].get("output") if has_selection else None
         is_busy = self.current_worker is not None
+        is_transcribing = is_busy and self.current_mode in {"single", "batch"}
+        has_file = self.selected_file is not None
+        has_model = self.current_model_key() is not None
+        has_transcript = self.current_transcript_path is not None
+        media_can_stop = (
+            self.media_loaded
+            and self.media_player.playbackState() != QMediaPlayer.PlaybackState.StoppedState
+        )
 
+        self.browse_btn.setEnabled(not is_busy)
+        self.transcribe_btn.setEnabled(has_file and has_model and not is_busy)
+        self.stop_btn.setEnabled(is_transcribing)
+        self.open_output_btn.setEnabled(not is_busy)
+        self.open_transcript_btn.setEnabled(not is_busy)
+        self.save_transcript_btn.setEnabled(has_transcript and self.transcript_editor.isEnabled() and not is_busy)
+        self.output_combo.setEnabled(not is_busy)
+        self.model_combo.setEnabled(not is_busy)
+        self.source_language_combo.setEnabled(not is_busy)
+        self.target_language_combo.setEnabled(not is_busy)
+        self.save_timestamps_checkbox.setEnabled(not is_busy)
         self.add_batch_btn.setEnabled(not is_busy)
         self.remove_batch_btn.setEnabled(has_selection and not is_busy)
         self.clear_batch_btn.setEnabled(has_items and not is_busy)
-        self.batch_transcribe_btn.setEnabled(has_items and not is_busy)
+        self.batch_transcribe_btn.setEnabled(has_items and has_model and not is_busy)
         self.retrieve_batch_btn.setEnabled(bool(selected_output) and not is_busy)
+        self.play_pause_btn.setEnabled(self.media_loaded)
+        self.media_stop_btn.setEnabled(media_can_stop)
+        self.media_slider.setEnabled(self.media_loaded)
+        self._set_download_controls_enabled(not is_busy)
+        self._sync_button_cursors()
 
     def start_batch_transcription(self) -> None:
         if not self.batch_items:
@@ -1003,10 +1032,6 @@ class MainWindow(QMainWindow):
             )
 
         self.refresh_batch_list()
-        self.transcribe_btn.setEnabled(False)
-        self.stop_btn.setEnabled(True)
-        self._set_download_controls_enabled(False)
-        self.sync_batch_controls()
         self.progress.setRange(0, 0)
         self.progress_label.setText(f"Batch transcription running: {len(options_list)} file(s)")
         self.append_log(f"Starting batch transcription: {len(options_list)} file(s)")
@@ -1021,6 +1046,7 @@ class MainWindow(QMainWindow):
         worker.signals.batch_finished.connect(self.on_batch_finished)
         self.current_worker = worker
         self.current_mode = "batch"
+        self.sync_action_controls()
         self.thread_pool.start(worker)
 
     def on_batch_item_started(self, index: int, input_path) -> None:
@@ -1057,12 +1083,9 @@ class MainWindow(QMainWindow):
         self.progress_label.setText(f"Batch complete: {completed} done, {failed} failed")
         self.append_log(f"Batch complete: {completed} done, {failed} failed")
         QMessageBox.information(self, "Batch completed", f"Completed: {completed}\nFailed: {failed}")
-        self.transcribe_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        self._set_download_controls_enabled(True)
         self.current_worker = None
         self.current_mode = None
-        self.sync_batch_controls()
+        self.sync_action_controls()
 
     def on_batch_cancelled(self) -> None:
         self.append_log("Batch transcription cancelled.")
@@ -1073,12 +1096,9 @@ class MainWindow(QMainWindow):
         self.progress.setRange(0, 1)
         self.progress.setValue(0)
         self.progress_label.setText("Batch cancelled")
-        self.transcribe_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        self._set_download_controls_enabled(True)
         self.current_worker = None
         self.current_mode = None
-        self.sync_batch_controls()
+        self.sync_action_controls()
 
     def retrieve_batch_output(self) -> None:
         row = self.batch_list.currentRow()
@@ -1117,6 +1137,7 @@ class MainWindow(QMainWindow):
             self.model_combo.setCurrentIndex(0)
 
         self.refresh_model_settings_list()
+        self.sync_action_controls()
 
     def current_model_key(self) -> str | None:
         key = self.model_combo.currentData()
@@ -1196,6 +1217,7 @@ class MainWindow(QMainWindow):
         for button in self.download_buttons:
             button.setObjectName("downloadModelButton")
             button.setMinimumWidth(DESIGN_TOKENS["control"]["model_download_min_width"])
+        self._sync_button_cursors()
 
         model_layout.addWidget(downloads_widget)
         layout.addWidget(model_box)
@@ -1278,9 +1300,6 @@ class MainWindow(QMainWindow):
         if not output_dir:
             return
 
-        self.transcribe_btn.setEnabled(False)
-        self.stop_btn.setEnabled(True)
-        self._set_download_controls_enabled(False)
         self.progress_label.setText("Preparing transcription...")
 
         opts = TranscriptionOptions(
@@ -1301,7 +1320,7 @@ class MainWindow(QMainWindow):
         worker.signals.cancelled.connect(self.on_transcription_cancelled)
         self.current_worker = worker
         self.current_mode = "single"
-        self.sync_batch_controls()
+        self.sync_action_controls()
         self.thread_pool.start(worker)
 
     def on_transcription_finished(self, output_path) -> None:
@@ -1313,12 +1332,9 @@ class MainWindow(QMainWindow):
         self.append_log(f"Done: {output_path}")
         self.load_transcript(output_path)
         QMessageBox.information(self, "Completed", f"Output saved to:\n{output_path}")
-        self.transcribe_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        self._set_download_controls_enabled(True)
         self.current_worker = None
         self.current_mode = None
-        self.sync_batch_controls()
+        self.sync_action_controls()
 
     def on_worker_error(self, message: str) -> None:
         self.progress.setRange(0, 1)
@@ -1327,12 +1343,9 @@ class MainWindow(QMainWindow):
         self.progress_label.setText("Stopped")
         self.append_log(f"ERROR: {message}")
         QMessageBox.critical(self, "Error", message)
-        self._set_download_controls_enabled(True)
-        self.transcribe_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
         self.current_worker = None
         self.current_mode = None
-        self.sync_batch_controls()
+        self.sync_action_controls()
 
     def open_outputs(self) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(outputs_dir())))
@@ -1341,13 +1354,12 @@ class MainWindow(QMainWindow):
         self.media_player.stop()
         self.media_player.setSource(QUrl.fromLocalFile(str(path)))
         self.media_slider.setValue(0)
-        self.media_slider.setEnabled(True)
-        self.play_pause_btn.setEnabled(True)
-        self.media_stop_btn.setEnabled(True)
+        self.media_loaded = True
         self.play_pause_btn.setText("Play")
         self.play_pause_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
         self.position_label.setText("00:00")
         self.duration_label.setText("00:00")
+        self.sync_action_controls()
 
     def toggle_playback(self) -> None:
         if self.media_player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
@@ -1376,6 +1388,7 @@ class MainWindow(QMainWindow):
         self.play_pause_btn.setText("Pause" if is_playing else "Play")
         icon = QStyle.StandardPixmap.SP_MediaPause if is_playing else QStyle.StandardPixmap.SP_MediaPlay
         self.play_pause_btn.setIcon(self.style().standardIcon(icon))
+        self.sync_action_controls()
 
     def on_media_error(self, error, message: str) -> None:
         if error == QMediaPlayer.Error.NoError:
@@ -1404,9 +1417,9 @@ class MainWindow(QMainWindow):
         self.current_transcript_path = path
         self.transcript_editor.setPlainText(text)
         self.transcript_editor.setEnabled(True)
-        self.save_transcript_btn.setEnabled(True)
         self.transcript_label.setText(str(path))
         self.append_log(f"Transcript loaded: {path}")
+        self.sync_action_controls()
 
     def save_transcript(self) -> None:
         if not self.current_transcript_path:
@@ -1451,16 +1464,13 @@ class MainWindow(QMainWindow):
         self.progress.setFormat("%p%")
         self.download_started_at = time.monotonic()
         self.active_download_model_key = model_key
-        self._set_download_controls_enabled(False)
-        self.transcribe_btn.setEnabled(False)
-        self.stop_btn.setEnabled(False)
         worker = DownloadModelWorker(model_key, self.model_manager)
         worker.signals.progress.connect(self.on_download_progress)
         worker.signals.error.connect(self.on_worker_error)
         worker.signals.finished.connect(self.on_download_finished)
         self.current_worker = worker
         self.current_mode = "download"
-        self.sync_batch_controls()
+        self.sync_action_controls()
         self.thread_pool.start(worker)
 
     def on_download_progress(self, done: int, total: int) -> None:
@@ -1492,16 +1502,16 @@ class MainWindow(QMainWindow):
         self.progress_label.setText(f"Download complete: {Path(path).name}")
         self.append_log(f"Model downloaded: {path}")
         self.refresh_models()
-        self._set_download_controls_enabled(True)
-        self.transcribe_btn.setEnabled(True)
         self.current_worker = None
         self.current_mode = None
         self.active_download_model_key = None
-        self.sync_batch_controls()
+        self.sync_action_controls()
 
 
 
     def stop_transcription(self):
+        if self.current_mode not in {"single", "batch"}:
+            return
         self.append_log("Stop requested by user...")
         worker = getattr(self, "current_worker", None)
         if worker is not None:
@@ -1515,12 +1525,9 @@ class MainWindow(QMainWindow):
         self.progress.setRange(0, 1)
         self.progress.setValue(0)
         self.progress_label.setText("Cancelled")
-        self.transcribe_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        self._set_download_controls_enabled(True)
         self.current_worker = None
         self.current_mode = None
-        self.sync_batch_controls()
+        self.sync_action_controls()
 
     def show_help(self) -> None:
         manual = (
@@ -1604,6 +1611,11 @@ class MainWindow(QMainWindow):
     def _set_download_controls_enabled(self, enabled: bool) -> None:
         for button in getattr(self, "download_buttons", []):
             button.setEnabled(enabled)
+
+    def _sync_button_cursors(self) -> None:
+        for button in self.findChildren(QPushButton):
+            cursor = Qt.CursorShape.PointingHandCursor if button.isEnabled() else Qt.CursorShape.ArrowCursor
+            button.setCursor(cursor)
 
     def set_theme(self, theme_name: str, persist: bool = True) -> None:
         if theme_name not in THEME_PALETTES:
@@ -1844,6 +1856,16 @@ class MainWindow(QMainWindow):
                     block(
                         'QPushButton[role="secondary"]',
                         f"background: {c['secondary_bg']};\nborder-color: {c['secondary_border']};",
+                    ),
+                    block(
+                        'QPushButton[role="secondary"]:hover',
+                        "\n".join(
+                            [
+                                f"background: {c['button_hover_bg']};",
+                                f"border-color: {c['button_hover_border']};",
+                                f"color: {c['button_text']};",
+                            ]
+                        ),
                     ),
                     block(
                         "QPushButton#browseButton",

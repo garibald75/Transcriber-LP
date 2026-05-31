@@ -2,6 +2,12 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.14 - 2026-05-31
+
+- Centralized UI action-state handling so buttons enable only when their workflow action is relevant.
+- Restricted the main Stop button to active single-file or batch transcription jobs.
+- Restored visible hover treatment for secondary action buttons.
+
 ## 0.4.13 - 2026-05-31
 
 - Removed the subtitle under the app title to reclaim vertical space.
