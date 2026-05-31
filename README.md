@@ -55,9 +55,15 @@ Transcriber-LP uses semantic versioning starting at `0.1.0`.
 
 The source of truth is `app/version.py`. macOS bundle metadata is read from that file during PyInstaller builds.
 
-## Screenshot
+## Screenshots
 
-![Transcriber-LP night UI](docs/transcriber-lp-screenshot.svg)
+Light theme:
+
+![Transcriber-LP light UI](docs/transcriber-lp-screenshot-light.svg)
+
+Night theme:
+
+![Transcriber-LP night UI](docs/transcriber-lp-screenshot-night.svg)
 
 ## Appearance
 
