@@ -1,6 +1,6 @@
 # Transcriber-LP User Manual
 
-Current version: `0.4.5`
+Current version: `0.4.16`
 
 Versioning starts at `0.1.0` for the first tracked public-ready baseline. The source of truth is `app/version.py`.
 
@@ -13,6 +13,10 @@ python -m app.main
 ```
 
 For a packaged build, open `dist/Transcriber-LP.app`.
+
+## Interface Preview
+
+![Transcriber-LP light UI](transcriber-lp-screenshot-light.svg)
 
 ## Transcribe a File
 
