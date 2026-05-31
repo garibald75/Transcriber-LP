@@ -5,15 +5,15 @@ from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+CI_LINUX = os.environ.get("GITHUB_ACTIONS") == "true" and sys.platform.startswith("linux")
+if CI_LINUX:
+    raise unittest.SkipTest("UI smoke tests require a stable Qt desktop runtime; Linux CI covers non-GUI tests.")
+
 from PySide6.QtWidgets import QApplication
 
 from app.ui.main_window import MainWindow
 
 
-@unittest.skipIf(
-    os.environ.get("GITHUB_ACTIONS") == "true" and sys.platform.startswith("linux"),
-    "UI smoke tests require a stable Qt desktop runtime; Linux CI covers non-GUI tests.",
-)
 class UiActionStateTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
