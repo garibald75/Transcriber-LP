@@ -2,6 +2,10 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.15 - 2026-05-31
+
+- Changed macOS icon generation to render SVG assets with a transparent Qt image so Dock icons keep alpha edges instead of a white square background.
+
 ## 0.4.14 - 2026-05-31
 
 - Centralized UI action-state handling so buttons enable only when their workflow action is relevant.
