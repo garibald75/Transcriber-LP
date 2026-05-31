@@ -3,14 +3,17 @@
 [![CI](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml/badge.svg)](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml)
 ![Version](https://img.shields.io/badge/version-0.4.16-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![AI Speech-to-Text](https://img.shields.io/badge/AI-speech--to--text-7c3aed)
+![Local First](https://img.shields.io/badge/local--first-on--device%20inference-0f766e)
 
 Current version: `0.4.16`
 
-A local-first macOS transcription app built with PySide6, PyInstaller, FFmpeg, and `whisper.cpp`.
+An AI-powered, local-first macOS transcription app that turns audio and video into editable text using Whisper, an automatic speech recognition AI model. It runs on-device ML inference through `whisper.cpp`, with FFmpeg media processing and a native PySide6 desktop workflow.
 
 ## Project highlights
 
-- Offline transcription workflow with no hosted backend or user media upload.
+- AI speech-to-text pipeline based on Whisper automatic speech recognition, with local ML model execution and no hosted backend or user media upload.
+- Privacy-conscious AI pipeline: media extraction, transcription, model selection, and transcript review stay on the user's machine.
 - Native desktop UI with drag and drop, batch import, unified Settings dropdowns, language controls, output format selection, media preview, quick transcript editing, theme switching, progress, cancellation, and help dialogs.
 - Local model management with checksum-gated downloads from the Settings dialog.
 - Automated Python syntax checks and unit tests through GitHub Actions.
@@ -19,7 +22,7 @@ A local-first macOS transcription app built with PySide6, PyInstaller, FFmpeg, a
 ## What this project is
 
 - Desktop UI built with PySide6.
-- Local transcription through the `whisper.cpp` CLI.
+- AI/ML-powered transcription through the `whisper.cpp` CLI.
 - Audio extraction through `ffmpeg`.
 - macOS packaging through PyInstaller.
 - Optional model downloads stored in the user's Application Support directory.
