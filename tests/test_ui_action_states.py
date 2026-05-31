@@ -10,6 +10,10 @@ from PySide6.QtWidgets import QApplication
 from app.ui.main_window import MainWindow
 
 
+@unittest.skipIf(
+    os.environ.get("GITHUB_ACTIONS") == "true" and sys.platform.startswith("linux"),
+    "UI smoke tests require a stable Qt desktop runtime; Linux CI covers non-GUI tests.",
+)
 class UiActionStateTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
