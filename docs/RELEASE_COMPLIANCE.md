@@ -55,6 +55,7 @@ Before publishing a `.app`, `.dmg`, or archive:
 - include third-party license texts for bundled runtime components
 - include FFmpeg provenance and license classification
 - include model provenance only if a model is bundled
+- include the Apple platform and trademark notice when the artifact or docs reference macOS, Apple Silicon, Finder, codesign, notarization, or `.app` bundles
 - exclude generated user outputs such as transcripts, subtitles, batch results, and timestamp CSV sidecars unless they are approved sample assets
 - run `python -m unittest discover tests`
 - run `codesign --verify --deep --strict --verbose=2` on the exported app from a non-cloud-synced directory

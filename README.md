@@ -83,6 +83,8 @@ For known-language recordings, selecting the language explicitly is recommended 
 
 This repository avoids committing binary distributions and model weights. Runtime binaries are supplied from `third_party/macos/` before packaging, and should only be added when their licenses are compatible with the distribution plan. The default macOS bundle does not include model weights; when no local model is present, `Current Model` shows a placeholder that opens Settings for a checksum-verified model download.
 
+Apple, macOS, Mac, Finder, and Apple Silicon are trademarks of Apple Inc. Platform references in this repository are descriptive compatibility notes only; Transcriber-LP is not affiliated with, endorsed by, or sponsored by Apple Inc. See `docs/THIRD_PARTY_NOTICE.md`.
+
 Transcriber-LP source code is licensed under the MIT License. See `LICENSE`.
 Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_PROVENANCE.md`, `docs/RELEASE_COMPLIANCE.md`, and `docs/DISTRIBUTION_CHECKLIST.md`.
 

@@ -16,6 +16,11 @@ Build-only components:
 - PyInstaller: PyInstaller Development Team, GPLv2-or-later with bootloader exception.
 - PyInstaller transitive helpers such as altgraph, macholib, and packaging are open-source packages and must retain their notices when redistributed.
 
+Platform and trademark notice:
+- Apple, macOS, Mac, Finder, and Apple Silicon are trademarks of Apple Inc., registered in the U.S. and other countries and regions.
+- References to Apple platform features are descriptive compatibility notes only. Transcriber-LP is not affiliated with, endorsed by, or sponsored by Apple Inc.
+- Transcriber-LP does not bundle Apple proprietary software, SDK assets, system icons, or Apple documentation content.
+
 Policy:
 - Do not commit or distribute proprietary binaries, codecs, or model weights.
 - Do not bundle model weights by default; use checksum-verified runtime downloads unless a release explicitly documents bundled model provenance.
