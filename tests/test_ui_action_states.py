@@ -66,16 +66,9 @@ class UiActionStateTests(unittest.TestCase):
         self.window.sync_action_controls()
         self.assertFalse(self.window.stop_btn.isEnabled())
 
-    def test_disabled_action_buttons_do_not_use_active_role_styles(self):
-        style = self.window.styleSheet()
-
-        disabled_rule = 'QPushButton[role="primary"]:disabled'
-        self.assertIn(disabled_rule, style)
-        self.assertIn('QPushButton[role="danger"]:disabled', style)
-        self.assertIn('QPushButton[role="secondary"]:disabled', style)
-        self.assertIn('QPushButton[role="primary"]:enabled:hover', style)
-        self.assertIn('QPushButton[role="danger"]:enabled:hover', style)
-        self.assertGreater(style.find(disabled_rule), style.find('QPushButton[role="primary"] {'))
+    def test_disabled_action_buttons_use_inactive_cursors(self):
+        self.assertEqual(self.window.transcribe_btn.cursor().shape(), self.window.stop_btn.cursor().shape())
+        self.assertEqual(self.window.transcribe_btn.cursor().shape().name, "ArrowCursor")
 
 
 if __name__ == "__main__":
