@@ -70,9 +70,9 @@ DEFAULT_DOWNLOAD_MODEL_KEY = "base"
 
 
 class ModelManager:
-    def __init__(self) -> None:
-        self.user_models_dir = models_dir()
-        self.bundled_dir = bundled_models_dir()
+    def __init__(self, user_models_dir: Path | None = None, bundled_dir: Path | None = None) -> None:
+        self.user_models_dir = user_models_dir if user_models_dir is not None else models_dir()
+        self.bundled_dir = bundled_dir if bundled_dir is not None else bundled_models_dir()
 
     def available_models(self) -> list[tuple[str, Path, str]]:
         available: list[tuple[str, Path, str]] = []
