@@ -1,10 +1,10 @@
 # Transcriber-LP
 
 [![CI](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml/badge.svg)](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.4.13-blue)
+![Version](https://img.shields.io/badge/version-0.4.14-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Current version: `0.4.13`
+Current version: `0.4.14`
 
 A local-first macOS transcription app built with PySide6, PyInstaller, FFmpeg, and `whisper.cpp`.
 
@@ -65,7 +65,7 @@ The app defaults to the light theme. Use `View > Theme > Light` or `View > Theme
 
 The selected theme is stored in the user settings and restored on the next launch. The theme system is palette-driven in `app/ui/main_window.py`, so new themes can be added by defining another entry in `THEME_PALETTES` and exposing it through the theme menu.
 
-Interactive controls use explicit hover and focus states. Dropdown menus highlight the item under the mouse, the media browser control is styled as a button, and the log panel includes a persistent `Auto-scroll` checkbox with a visible checked marker.
+Interactive controls use explicit hover and focus states. Actions are enabled only when they apply to the current workflow state: transcription requires a selected file and model, the main Stop button appears only during transcription, and media/player actions follow the loaded media state. Dropdown menus highlight the item under the mouse, the media browser control is styled as a button, and the log panel includes a persistent `Auto-scroll` checkbox with a visible checked marker.
 
 ## Language handling
 
