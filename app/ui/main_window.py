@@ -517,8 +517,8 @@ class MainWindow(QMainWindow):
         central = QWidget()
         central.setObjectName("appRoot")
         root = QVBoxLayout(central)
-        root.setContentsMargins(22, 16, 22, 16)
-        root.setSpacing(10)
+        root.setContentsMargins(22, 10, 22, 16)
+        root.setSpacing(6)
 
         header = QWidget()
         header.setObjectName("header")
@@ -528,10 +528,7 @@ class MainWindow(QMainWindow):
 
         title = QLabel("Transcriber-LP")
         title.setObjectName("appTitle")
-        subtitle = QLabel("Offline media transcription for clean text and subtitles")
-        subtitle.setObjectName("appSubtitle")
         header_layout.addWidget(title)
-        header_layout.addWidget(subtitle)
         root.addWidget(header)
 
         splitter = QSplitter()
@@ -733,7 +730,7 @@ class MainWindow(QMainWindow):
         right.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(14, 0, 0, 0)
-        right_layout.setSpacing(8)
+        right_layout.setSpacing(6)
 
         review_splitter = QSplitter(Qt.Orientation.Vertical)
         review_splitter.setObjectName("reviewSplitter")
@@ -858,9 +855,9 @@ class MainWindow(QMainWindow):
         self.log.setToolTip("Detailed log output from transcription and downloads.")
         log_panel_layout.addWidget(self.log, stretch=1)
         review_splitter.addWidget(log_panel)
-        review_splitter.setSizes([230, 260, 170])
-        review_splitter.setStretchFactor(0, 3)
-        review_splitter.setStretchFactor(1, 4)
+        review_splitter.setSizes([320, 230, 130])
+        review_splitter.setStretchFactor(0, 5)
+        review_splitter.setStretchFactor(1, 3)
         review_splitter.setStretchFactor(2, 2)
 
         splitter.addWidget(left)
@@ -1711,7 +1708,6 @@ class MainWindow(QMainWindow):
                             ]
                         ),
                     ),
-                    block("QLabel#appSubtitle", f"color: {c['muted']};\nfont-size: 13px;"),
                     block(
                         "QLabel#fileLabel,\nQLabel#progressLabel",
                         "\n".join(
