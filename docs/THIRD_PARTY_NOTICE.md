@@ -31,6 +31,12 @@ This notice is not legal advice. Before distributing a packaged app, verify the 
 | macholib | Ronald Oussoren and contributors | MIT | PyInstaller dependency on macOS | https://pypi.org/project/macholib/ |
 | packaging | PyPA / packaging contributors | Apache-2.0 or BSD-2-Clause | Python package metadata handling | https://pypi.org/project/packaging/ |
 
+## Platform And Trademark Notice
+
+Transcriber-LP targets macOS packaging and refers to Apple platform features such as macOS, Apple Silicon, Finder, Application Support, codesign, notarization, `.app` bundles, and standard macOS window controls. These references are descriptive platform compatibility notes only.
+
+Apple, macOS, Mac, Finder, and Apple Silicon are trademarks of Apple Inc., registered in the U.S. and other countries and regions. Transcriber-LP is not affiliated with, endorsed by, or sponsored by Apple Inc. The project does not bundle Apple proprietary software, SDK assets, system icons, or Apple documentation content.
+
 ## Repository Distribution Policy
 
 - Do not commit runtime binaries, model weights, `.bin` files, PyInstaller output, virtual environments, caches, or local backup files.
