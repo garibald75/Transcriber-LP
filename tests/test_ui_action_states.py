@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import unittest
 from pathlib import Path
 
@@ -76,6 +77,18 @@ class UiActionStateTests(unittest.TestCase):
     def test_disabled_action_buttons_use_inactive_cursors(self):
         self.assertEqual(self.window.transcribe_btn.cursor().shape(), self.window.stop_btn.cursor().shape())
         self.assertEqual(self.window.transcribe_btn.cursor().shape().name, "ArrowCursor")
+
+    def test_download_progress_updates_settings_dialog_only(self):
+        self.window.show_model_settings()
+        main_status = self.window.progress_label.text()
+        self.window.active_download_model_key = "base"
+        self.window.download_started_at = time.monotonic()
+
+        self.window.on_download_progress(50, 100)
+
+        self.assertEqual(self.window.progress_label.text(), main_status)
+        self.assertEqual(self.window.model_download_progress.value(), 50)
+        self.assertIn("Downloading Base", self.window.model_download_status_label.text())
 
 
 if __name__ == "__main__":
