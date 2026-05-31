@@ -472,6 +472,8 @@ class MainWindow(QMainWindow):
         self.download_buttons: list[QPushButton] = []
         self.model_settings_dialog: QDialog | None = None
         self.model_settings_list: QListWidget | None = None
+        self.model_download_progress: QProgressBar | None = None
+        self.model_download_status_label: QLabel | None = None
         self.settings = QSettings("Transcriber-LP", "Transcriber-LP")
         saved_theme = self.settings.value("appearance/theme", "light")
         self.theme_name = saved_theme if saved_theme in THEME_PALETTES else "light"
@@ -1220,6 +1222,21 @@ class MainWindow(QMainWindow):
         self._sync_button_cursors()
 
         model_layout.addWidget(downloads_widget)
+
+        self.model_download_progress = QProgressBar()
+        self.model_download_progress.setRange(0, 1)
+        self.model_download_progress.setValue(0)
+        self.model_download_progress.setFormat("")
+        self.model_download_progress.setTextVisible(True)
+        self.model_download_progress.setToolTip("Shows the current model download progress.")
+        model_layout.addWidget(self.model_download_progress)
+
+        self.model_download_status_label = QLabel("Ready")
+        self.model_download_status_label.setObjectName("modelDownloadStatus")
+        self.model_download_status_label.setWordWrap(True)
+        self.model_download_status_label.setToolTip("Current model download status.")
+        model_layout.addWidget(self.model_download_status_label)
+
         layout.addWidget(model_box)
 
         close_btn = QPushButton("Close")
@@ -1249,6 +1266,23 @@ class MainWindow(QMainWindow):
             item = QListWidgetItem(text)
             item.setToolTip(text)
             self.model_settings_list.addItem(item)
+
+    def set_model_download_status(self, text: str, percent: int | None = 0) -> None:
+        if self.model_download_status_label is not None:
+            self.model_download_status_label.setText(text)
+
+        if self.model_download_progress is None:
+            return
+
+        if percent is None:
+            self.model_download_progress.setRange(0, 0)
+            self.model_download_progress.setFormat("")
+            return
+
+        value = max(0, min(100, percent))
+        self.model_download_progress.setRange(0, 100)
+        self.model_download_progress.setValue(value)
+        self.model_download_progress.setFormat("Done" if value == 100 else f"{value}%")
 
     def ensure_default_model_available(self, force: bool = False) -> None:
         if self.current_model_key() is not None or self.current_worker is not None:
@@ -1457,16 +1491,12 @@ class MainWindow(QMainWindow):
     def download_model(self, model_key: str) -> None:
         model = MODEL_DEFS.get(model_key)
         label = model.label if model else model_key
-        self.append_log(f"Downloading model: {label}")
-        self.progress_label.setText(f"Preparing download: {label}")
-        self.progress.setRange(0, 100)
-        self.progress.setValue(0)
-        self.progress.setFormat("%p%")
+        self.set_model_download_status(f"Preparing download: {label}", 0)
         self.download_started_at = time.monotonic()
         self.active_download_model_key = model_key
         worker = DownloadModelWorker(model_key, self.model_manager)
         worker.signals.progress.connect(self.on_download_progress)
-        worker.signals.error.connect(self.on_worker_error)
+        worker.signals.error.connect(self.on_download_error)
         worker.signals.finished.connect(self.on_download_finished)
         self.current_worker = worker
         self.current_mode = "download"
@@ -1481,33 +1511,33 @@ class MainWindow(QMainWindow):
         speed = done / elapsed
 
         if total <= 0:
-            self.progress.setRange(0, 0)
-            self.progress_label.setText(
-                f"Downloading {label}: {_format_bytes(done)} downloaded at {_format_bytes(speed)}/s"
+            self.set_model_download_status(
+                f"Downloading {label}: {_format_bytes(done)} downloaded at {_format_bytes(speed)}/s",
+                None,
             )
             return
 
         percent = max(0, min(100, int(done * 100 / total)))
-        self.progress.setRange(0, 100)
-        self.progress.setValue(percent)
-        self.progress.setFormat(f"{percent}%")
-        self.progress_label.setText(
-            f"Downloading {label}: {_format_bytes(done)} / {_format_bytes(total)} at {_format_bytes(speed)}/s"
+        self.set_model_download_status(
+            f"Downloading {label}: {_format_bytes(done)} / {_format_bytes(total)} at {_format_bytes(speed)}/s",
+            percent,
         )
 
     def on_download_finished(self, path) -> None:
-        self.progress.setRange(0, 1)
-        self.progress.setValue(1)
-        self.progress.setFormat("Done")
-        self.progress_label.setText(f"Download complete: {Path(path).name}")
-        self.append_log(f"Model downloaded: {path}")
+        self.set_model_download_status(f"Download complete: {Path(path).name}", 100)
         self.refresh_models()
         self.current_worker = None
         self.current_mode = None
         self.active_download_model_key = None
         self.sync_action_controls()
 
-
+    def on_download_error(self, message: str) -> None:
+        self.set_model_download_status(f"Download failed: {message}", 0)
+        QMessageBox.critical(self, "Download error", message)
+        self.current_worker = None
+        self.current_mode = None
+        self.active_download_model_key = None
+        self.sync_action_controls()
 
     def stop_transcription(self):
         if self.current_mode not in {"single", "batch"}:
@@ -1721,7 +1751,7 @@ class MainWindow(QMainWindow):
                         ),
                     ),
                     block(
-                        "QLabel#fileLabel,\nQLabel#progressLabel",
+                        "QLabel#fileLabel,\nQLabel#progressLabel,\nQLabel#modelDownloadStatus",
                         "\n".join(
                             [
                                 f"color: {c['status_text']};",
