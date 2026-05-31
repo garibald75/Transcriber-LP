@@ -2,6 +2,11 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.16 - 2026-05-31
+
+- Fixed action-button disabled styling so unavailable primary, danger, and secondary actions no longer appear active.
+- Scoped action-button hover and pressed states to enabled buttons only.
+
 ## 0.4.15 - 2026-05-31
 
 - Changed macOS icon generation to render SVG assets with a transparent Qt image so Dock icons keep alpha edges instead of a white square background.

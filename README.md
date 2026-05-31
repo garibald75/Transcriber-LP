@@ -1,10 +1,10 @@
 # Transcriber-LP
 
 [![CI](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml/badge.svg)](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.4.15-blue)
+![Version](https://img.shields.io/badge/version-0.4.16-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Current version: `0.4.15`
+Current version: `0.4.16`
 
 A local-first macOS transcription app built with PySide6, PyInstaller, FFmpeg, and `whisper.cpp`.
 

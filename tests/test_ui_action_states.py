@@ -34,6 +34,16 @@ class UiActionStateTests(unittest.TestCase):
         self.window.sync_action_controls()
         self.assertTrue(self.window.transcribe_btn.isEnabled())
 
+    def test_empty_workspace_disables_unavailable_actions(self):
+        self.assertFalse(self.window.transcribe_btn.isEnabled())
+        self.assertFalse(self.window.batch_transcribe_btn.isEnabled())
+        self.assertFalse(self.window.stop_btn.isEnabled())
+        self.assertFalse(self.window.retrieve_batch_btn.isEnabled())
+        self.assertFalse(self.window.save_transcript_btn.isEnabled())
+        self.assertFalse(self.window.play_pause_btn.isEnabled())
+        self.assertFalse(self.window.media_stop_btn.isEnabled())
+        self.assertFalse(self.window.media_slider.isEnabled())
+
     def test_main_stop_only_enables_for_transcription_workers(self):
         self.window.selected_file = Path("/tmp/source.mp4")
         self.window.model_combo.addItem("Medium", "medium")
@@ -55,6 +65,17 @@ class UiActionStateTests(unittest.TestCase):
         self.window.current_mode = None
         self.window.sync_action_controls()
         self.assertFalse(self.window.stop_btn.isEnabled())
+
+    def test_disabled_action_buttons_do_not_use_active_role_styles(self):
+        style = self.window.styleSheet()
+
+        disabled_rule = 'QPushButton[role="primary"]:disabled'
+        self.assertIn(disabled_rule, style)
+        self.assertIn('QPushButton[role="danger"]:disabled', style)
+        self.assertIn('QPushButton[role="secondary"]:disabled', style)
+        self.assertIn('QPushButton[role="primary"]:enabled:hover', style)
+        self.assertIn('QPushButton[role="danger"]:enabled:hover', style)
+        self.assertGreater(style.find(disabled_rule), style.find('QPushButton[role="primary"] {'))
 
 
 if __name__ == "__main__":

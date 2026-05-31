@@ -1811,20 +1811,10 @@ class MainWindow(QMainWindow):
                         ),
                     ),
                     block(
-                        "QPushButton:hover",
+                        "QPushButton:enabled:hover",
                         f"background: {c['button_hover_bg']};\nborder-color: {c['button_hover_border']};",
                     ),
-                    block("QPushButton:pressed", f"background: {c['button_pressed_bg']};"),
-                    block(
-                        "QPushButton:disabled",
-                        "\n".join(
-                            [
-                                f"color: {c['button_disabled_text']};",
-                                f"background: {c['button_disabled_bg']};",
-                                f"border-color: {c['button_disabled_border']};",
-                            ]
-                        ),
-                    ),
+                    block("QPushButton:enabled:pressed", f"background: {c['button_pressed_bg']};"),
                     block(
                         'QPushButton[role="primary"]',
                         "\n".join(
@@ -1836,7 +1826,7 @@ class MainWindow(QMainWindow):
                         ),
                     ),
                     block(
-                        'QPushButton[role="primary"]:hover',
+                        'QPushButton[role="primary"]:enabled:hover',
                         f"background: {c['primary_hover_bg']};\nborder-color: {c['primary_hover_bg']};",
                     ),
                     block(
@@ -1850,7 +1840,7 @@ class MainWindow(QMainWindow):
                         ),
                     ),
                     block(
-                        'QPushButton[role="danger"]:hover',
+                        'QPushButton[role="danger"]:enabled:hover',
                         f"background: {c['danger_hover_bg']};\nborder-color: {c['danger_hover_bg']};",
                     ),
                     block(
@@ -1858,7 +1848,7 @@ class MainWindow(QMainWindow):
                         f"background: {c['secondary_bg']};\nborder-color: {c['secondary_border']};",
                     ),
                     block(
-                        'QPushButton[role="secondary"]:hover',
+                        'QPushButton[role="secondary"]:enabled:hover',
                         "\n".join(
                             [
                                 f"background: {c['button_hover_bg']};",
@@ -1880,7 +1870,7 @@ class MainWindow(QMainWindow):
                         ),
                     ),
                     block(
-                        "QPushButton#browseButton:hover",
+                        "QPushButton#browseButton:enabled:hover",
                         "\n".join(
                             [
                                 f"background: {c['primary_bg']};",
@@ -1889,13 +1879,28 @@ class MainWindow(QMainWindow):
                             ]
                         ),
                     ),
-                    block("QPushButton#browseButton:pressed", f"background: {c['primary_hover_bg']};"),
+                    block("QPushButton#browseButton:enabled:pressed", f"background: {c['primary_hover_bg']};"),
                     block(
                         "QPushButton#downloadModelButton",
                         "\n".join(
                             [
                                 "min-height: 32px;",
                                 "padding: 6px 10px;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QPushButton:disabled,\n"
+                        'QPushButton[role="primary"]:disabled,\n'
+                        'QPushButton[role="danger"]:disabled,\n'
+                        'QPushButton[role="secondary"]:disabled,\n'
+                        "QPushButton#browseButton:disabled,\n"
+                        "QPushButton#downloadModelButton:disabled",
+                        "\n".join(
+                            [
+                                f"color: {c['button_disabled_text']};",
+                                f"background: {c['button_disabled_bg']};",
+                                f"border-color: {c['button_disabled_border']};",
                             ]
                         ),
                     ),
