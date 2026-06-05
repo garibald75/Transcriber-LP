@@ -19,7 +19,7 @@ Use this checklist before publishing a release artifact. It is intentionally str
 - Confirm exact third-party license texts are included with any packaged app bundle.
 - Confirm the FFmpeg build license classification is compatible with the intended distribution model.
 - Confirm the packaged app was smoke-tested on the target macOS architecture.
-- Confirm media preview, quick transcript editing, batch import, output retrieval, and optional timestamp CSV sidecar export were smoke-tested.
+- Confirm media preview, quick transcript editing, batch import, output retrieval, timestamped TXT output, and optional timestamp CSV sidecar export were smoke-tested.
 - Confirm no generated user outputs, including transcripts, subtitle files, batch results, or timestamp CSV sidecars, are included in public release artifacts unless approved as sample assets.
 - Confirm `codesign --verify --deep --strict --verbose=2 dist/Transcriber-LP.app` passes from a non-cloud-synced release directory.
 - Create a signed Git tag such as `v0.4.5` when the release is final.

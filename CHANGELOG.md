@@ -2,6 +2,11 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.18 - 2026-06-05
+
+- Changed timestamped `txt` exports to include segment timecodes in the main transcript file.
+- Renamed the timestamp setting to clarify that `srt` and `vtt` already include timecodes while a CSV sidecar is still saved for timing data.
+
 ## 0.4.17 - 2026-06-05
 
 - Fixed output verification for media filenames whose stems contain dotted suffixes such as `.H264`.

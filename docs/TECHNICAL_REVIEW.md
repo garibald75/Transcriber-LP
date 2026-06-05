@@ -4,12 +4,12 @@ This document summarizes the engineering decisions that are most relevant when r
 
 ## Product Scope
 
-Transcriber-LP is a local-first macOS desktop app for creating `txt`, `srt`, and `vtt` transcripts from media files, with optional timestamp CSV sidecars for review and downstream tooling. The app is intentionally scoped around offline transcription, batch processing, quick transcript correction, predictable packaging, and clear handling of third-party binaries and model files.
+Transcriber-LP is a local-first macOS desktop app for creating `txt`, `srt`, and `vtt` transcripts from media files, with optional timestamped text output and CSV sidecars for review and downstream tooling. The app is intentionally scoped around offline transcription, batch processing, quick transcript correction, predictable packaging, and clear handling of third-party binaries and model files.
 
 ## Architecture
 
 - `app/ui/` contains the PySide6 desktop interface, menus, responsive layout, media preview, transcript editor, batch queue, theme handling, help dialogs, and user interaction flow.
-- `app/core/` contains transcription command construction, subprocess orchestration, timestamp sidecar support, model discovery, checksum-gated model downloads, and runtime paths.
+- `app/core/` contains transcription command construction, subprocess orchestration, timestamped text and sidecar support, model discovery, checksum-gated model downloads, and runtime paths.
 - `scripts/` contains repeatable setup and packaging helpers for macOS Apple Silicon builds.
 - `tests/` covers import stability, command construction, timestamp export flags, checksum behavior, model manager edge cases, and batch output naming helpers.
 
@@ -20,7 +20,7 @@ The UI keeps a small atomic design token layer for shared control metrics such a
 - Transcription runs through local command-line tools rather than a hosted API.
 - Batch import processes queued media sequentially, which keeps resource use predictable and makes per-item logging easier to inspect.
 - The review workflow keeps the source media preview and transcript editor in the same window so a user can correct recognition errors or typos immediately after generation.
-- Optional timestamp export is implemented as a sidecar output, so users can keep a human-readable transcript format while preserving segment timing separately.
+- Optional timestamp output rewrites `txt` transcripts with segment timecodes while preserving a CSV sidecar for downstream timing workflows.
 - If no model is installed, the `Current Model` placeholder opens Settings for a user-initiated model download and accepts it only after checksum verification.
 - Runtime binaries and model weights are kept out of Git history.
 - CI compiles all Python files and runs unit tests on multiple Python versions.
