@@ -24,7 +24,7 @@ CI runs these checks on Python 3.9 and 3.11 using `.github/workflows/ci.yml`.
 - Python syntax validation for all modules under `app/`
 - Basic import coverage for core and UI modules
 - Command construction tests for FFmpeg and `whisper-cli`, including explicit `-l auto` language detection and optional timestamp CSV sidecar export
-- Transcriber output path tests for dotted media stems and timestamp CSV sidecars
+- Transcriber output path and timestamped text tests for dotted media stems, TXT timecodes, and timestamp CSV sidecars
 - Model manager tests for model discovery, missing models, and checksum enforcement
 - UI helper tests for batch output naming and duplicate filename handling
 
@@ -36,7 +36,7 @@ CI runs these checks on Python 3.9 and 3.11 using `.github/workflows/ci.yml`.
 python -m app.main
 ```
 
-Verify file selection, drag and drop, output format selection, timestamp sidecar selection, model selection, theme switching, `Transcribe`, `Stop`, and the Help menu.
+Verify file selection, drag and drop, output format selection, timestamped output selection, model selection, theme switching, `Transcribe`, `Stop`, and the Help menu.
 
 Also verify these UI interaction states:
 
@@ -78,7 +78,8 @@ For a packaged Apple Silicon build, confirm:
 - a short audio file can be converted with bundled `ffmpeg`
 - `whisper-cli` can load the selected model and produce a `txt`, `srt`, or `vtt` file
 - `Auto-detect` language mode passes `-l auto`; known-language audio can be forced with a language code such as `-l it`
-- enabling `Save timestamps` produces a `.csv` sidecar while preserving the selected main transcript format
+- enabling `Timestamped output` with `txt` prefixes transcript lines with timecodes and produces a `.csv` sidecar
+- `srt` and `vtt` outputs contain subtitle timecodes in the main file
 - batch transcription writes one output per queued source and keeps completed outputs retrievable from the queue
 
 ## Known Release Checks

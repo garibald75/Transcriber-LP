@@ -649,17 +649,17 @@ class MainWindow(QMainWindow):
         self.output_combo.addItems(["txt", "srt", "vtt"])
         self.output_combo.setToolTip("Choose the output subtitle/text format for the transcription.")
         add_settings_row("Output format", self.output_combo)
-        self.save_timestamps_checkbox = XCheckBox("Save timestamps")
+        self.save_timestamps_checkbox = XCheckBox("Timestamped output")
         self.save_timestamps_checkbox.setMinimumHeight(DESIGN_TOKENS["control"]["min_height"])
         self.save_timestamps_checkbox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.save_timestamps_checkbox.setChecked(self._settings_bool("export/save_timestamps", False))
         self.save_timestamps_checkbox.setToolTip(
-            "Also save timestamp data as a CSV sidecar, regardless of the selected output format."
+            "For TXT, add timecodes to each transcript line. SRT and VTT already include timecodes. Also saves a CSV sidecar."
         )
         self.save_timestamps_checkbox.toggled.connect(
             lambda enabled: self.settings.setValue("export/save_timestamps", enabled)
         )
-        add_settings_row("Timestamp export", self.save_timestamps_checkbox)
+        add_settings_row("Timestamp output", self.save_timestamps_checkbox)
 
         self.model_combo = DesignComboBox()
         self.model_combo.empty_click_handler = self.show_model_settings
@@ -1567,7 +1567,7 @@ class MainWindow(QMainWindow):
             "3) Controlla Current Model. Se non c'e un modello, clicca il placeholder per aprire Settings e scaricarlo.\n"
             "4) Opzionalmente imposta la lingua sorgente o lascia Auto-detect per la rilevazione automatica.\n"
             "5) Scegli se mantenere la lingua originale o tradurre in inglese.\n"
-            "6) Abilita Save timestamps se vuoi anche un file CSV con i timestamp.\n"
+            "6) Abilita Timestamped output se vuoi timecode nel TXT e un CSV con i timestamp.\n"
             "7) Clicca Transcribe per avviare; usa Stop per annullare la trascrizione in corso.\n\n"
             "Batch:\n"
             "- Usa Add files nella Batch Queue per importare piu file.\n"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import os
 import signal
 import subprocess
@@ -81,6 +82,9 @@ class Transcriber:
         if options.save_timestamps:
             timestamp_file = self._output_file(out_base, "csv")
             self._verify_output_file(timestamp_file)
+            if options.output_format == "txt":
+                self._write_timestamped_text_file(timestamp_file, output_file)
+                self._log(log_cb, f"Timestamped text saved: {output_file}")
             self._log(log_cb, f"Timestamp sidecar saved: {timestamp_file}")
         self._log(log_cb, f"=== TRANSCRIBER END OK === {output_file}")
         return output_file
@@ -112,6 +116,32 @@ class Transcriber:
     @staticmethod
     def _output_file(out_base: Path, extension: str) -> Path:
         return Path(f"{out_base}.{extension.lstrip('.')}")
+
+    @classmethod
+    def _write_timestamped_text_file(cls, timestamp_file: Path, output_file: Path) -> None:
+        output_file.write_text(
+            "\n".join(cls._timestamped_text_lines(timestamp_file)) + "\n",
+            encoding="utf-8",
+        )
+
+    @classmethod
+    def _timestamped_text_lines(cls, timestamp_file: Path) -> list[str]:
+        with timestamp_file.open(newline="", encoding="utf-8") as handle:
+            rows = csv.DictReader(handle)
+            return [
+                f"[{cls._format_timestamp_ms(row['start'])} - {cls._format_timestamp_ms(row['end'])}] "
+                f"{row['text'].strip()}"
+                for row in rows
+                if row.get("start") and row.get("end") and row.get("text")
+            ]
+
+    @staticmethod
+    def _format_timestamp_ms(value: str | int) -> str:
+        total_ms = int(value)
+        hours, remainder = divmod(total_ms, 3_600_000)
+        minutes, remainder = divmod(remainder, 60_000)
+        seconds, milliseconds = divmod(remainder, 1_000)
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
 
     @staticmethod
     def _log(log_cb, message: str) -> None:
