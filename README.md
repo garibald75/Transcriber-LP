@@ -260,6 +260,26 @@ python -m unittest discover tests
 
 If the checkout is inside a cloud-synced folder and Python cannot write its cache files, set `PYTHONPYCACHEPREFIX` to a local temporary directory before running `py_compile`.
 
+## Known Issues
+
+### Language Detection Switching (Whisper.cpp)
+
+When using `Auto-detect` for source language on some audio files, Whisper.cpp may misclassify the language initially and then switch mid-transcription (e.g., starting in Italian but switching to English).
+
+**Workaround:** Manually select the correct source language in the "Source language" dropdown instead of using `Auto-detect`. This forces the model to process the audio as that language from the start, avoiding detection errors.
+
+**Example:**
+- For Italian audio: Select "Italian" instead of "Auto-detect"
+- For English audio: Select "English" instead of "Auto-detect"
+
+This is particularly useful for recordings with:
+- Accented speech
+- Background noise
+- Mixed-language content
+- Longer audio files
+
+See `docs/USER_MANUAL.md` for more details on language selection.
+
 ## Runtime paths
 
 - downloaded models: `~/Library/Application Support/Transcriber-LP/models`

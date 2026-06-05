@@ -59,6 +59,37 @@ Use `Open transcript` to load an existing transcript manually.
 
 If the recording language is known, choose it directly. For example, Italian audio should use `Italian`, which passes `-l it` and avoids unnecessary language detection errors on long or noisy recordings.
 
+## Troubleshooting
+
+### Transcript Language Switching Mid-File
+
+**Problem:** When using `Auto-detect`, a transcript that starts in one language (e.g., Italian) suddenly switches to another (e.g., English) partway through.
+
+**Cause:** Whisper.cpp's automatic language detection may misclassify the source language, especially on audio with accents, background noise, or mixed-language content. The model may start with an incorrect language assumption and then "correct" itself when it detects a different pattern.
+
+**Solution:** Use manual language selection instead of `Auto-detect`.
+
+**Steps:**
+1. Select your media file
+2. In the **Source language** dropdown, choose the correct language (e.g., "Italian")
+3. Do NOT use "Auto-detect"
+4. Proceed with transcription
+
+Manual language selection forces Whisper.cpp to use the specified language from the first frame, avoiding detection errors.
+
+### Audio Quality and Language Detection
+
+Poor audio quality increases the chance of language misdetection. If you experience language switching even with manual language selection, try:
+- Using a longer segment of audio (Whisper benefits from more context)
+- Checking the source audio for noise, compression, or encoding issues
+- Testing with a shorter segment first to verify settings
+
+### Translate to English
+
+Currently, **translation to English is the only supported translation mode** because Whisper.cpp natively translates to English only. Other translation targets require external tools and are not included in this release.
+
+To keep the original language, choose **"Keep original language"** in the Translation target dropdown.
+
 ## Appearance
 
 Transcriber-LP starts with the light theme by default.
