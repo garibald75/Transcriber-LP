@@ -1,12 +1,12 @@
 # Transcriber-LP
 
 [![CI](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml/badge.svg)](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.4.18-blue)
+![Version](https://img.shields.io/badge/version-0.4.19-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![AI Speech-to-Text](https://img.shields.io/badge/AI-speech--to--text-7c3aed)
 ![Local First](https://img.shields.io/badge/local--first-on--device%20inference-0f766e)
 
-Current version: `0.4.18`
+Current version: `0.4.19`
 
 An AI-powered, local-first macOS transcription app that turns audio and video into editable text using Whisper, an automatic speech recognition AI model. It runs on-device ML inference through `whisper.cpp`, with FFmpeg media processing and a native PySide6 desktop workflow.
 
@@ -39,7 +39,7 @@ The repository intentionally does not commit runtime binaries, model weights, vi
 - optional timestamped TXT output with CSV timing sidecar export
 - source language selection or auto-detect
 - translate to English or keep the source language
-- `Current Model` selector with a first-run download placeholder that opens model downloads in Settings
+- `Current Model` selector with a first-run missing-model prompt and model downloads in Settings
 - media preview player for reviewing the original source while correcting a transcript
 - quick transcript editor with overwrite confirmation before saving corrected `txt`, `srt`, and `vtt` files
 - batch status logging and output retrieval for completed queue items
@@ -84,7 +84,7 @@ For known-language recordings, selecting the language explicitly is recommended 
 - `requests`: Apache License 2.0.
 - Models (for example `ggml-base.bin`): may have separate licensing and distribution requirements.
 
-This repository avoids committing binary distributions and model weights. Runtime binaries are supplied from `third_party/macos/` before packaging, and should only be added when their licenses are compatible with the distribution plan. The default macOS bundle does not include model weights; when no local model is present, `Current Model` shows a placeholder that opens Settings for a checksum-verified model download.
+This repository avoids committing binary distributions and model weights. Runtime binaries are supplied from `third_party/macos/` before packaging, and should only be added when their licenses are compatible with the distribution plan. The default macOS bundle does not include model weights; when no local model is present, the app prompts the user to download a checksum-verified model at runtime or open Settings to choose one.
 
 Apple, macOS, Mac, Finder, and Apple Silicon are trademarks of Apple Inc. Platform references in this repository are descriptive compatibility notes only; Transcriber-LP is not affiliated with, endorsed by, or sponsored by Apple Inc. See `docs/THIRD_PARTY_NOTICE.md`.
 

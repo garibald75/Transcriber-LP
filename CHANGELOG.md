@@ -2,6 +2,11 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.19 - 2026-06-06
+
+- Added a first-run missing-model prompt that offers to download the checksum-verified Base model or open model downloads in Settings.
+- Kept packaged builds model-free by default while guiding users to runtime model downloads.
+
 ## 0.4.18 - 2026-06-05
 
 - Changed timestamped `txt` exports to include segment timecodes in the main transcript file.
