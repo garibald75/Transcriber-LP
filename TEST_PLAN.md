@@ -24,6 +24,7 @@ CI runs these checks on Python 3.9 and 3.11 using `.github/workflows/ci.yml`.
 - Python syntax validation for all modules under `app/`
 - Basic import coverage for core and UI modules
 - Command construction tests for FFmpeg and `whisper-cli`, including explicit `-l auto` language detection and optional timestamp CSV sidecar export
+- Transcriber output path tests for dotted media stems and timestamp CSV sidecars
 - Model manager tests for model discovery, missing models, and checksum enforcement
 - UI helper tests for batch output naming and duplicate filename handling
 
