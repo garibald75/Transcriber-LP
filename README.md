@@ -17,7 +17,7 @@ An AI-powered, local-first macOS transcription app that turns audio and video in
 - Native desktop UI with drag and drop, batch import, unified Settings dropdowns, language controls, output format selection, media preview, quick transcript editing, theme switching, progress, cancellation, and help dialogs.
 - Local model management with checksum-gated downloads from the Settings dialog.
 - Automated Python syntax checks and unit tests through GitHub Actions.
-- macOS Apple Silicon packaging flow with explicit third-party binary, model, and license provenance.
+- macOS packaging flow with target-specific third-party binary, model, and license provenance.
 
 ## What this project is
 
@@ -28,7 +28,7 @@ An AI-powered, local-first macOS transcription app that turns audio and video in
 - Optional model downloads stored in the user's Application Support directory.
 - Offline-capable workflow with no server requirement.
 
-The repository intentionally does not commit runtime binaries, model weights, virtual environments, or build products. Packaging inputs must be supplied locally under `third_party/macos/` and documented before any release artifact is distributed.
+The repository intentionally does not commit runtime binaries, model weights, virtual environments, or build products. Packaging inputs must be supplied locally under `third_party/macos/` or a target-specific subdirectory before building.
 
 ## Features
 
@@ -102,7 +102,7 @@ Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_P
 - `docs/DISTRIBUTION_CHECKLIST.md` release readiness checklist
 - `docs/TECHNICAL_REVIEW.md` implementation notes for technical review
 - `scripts/` packaging and helper scripts
-- `third_party/macos/` local packaging inputs; only `.gitkeep` is tracked
+- `third_party/macos/` local packaging inputs; only `.gitkeep` placeholders are tracked
 - `.github/workflows/` CI pipeline
 
 ## Quick start
@@ -126,98 +126,63 @@ pip install -r requirements.txt
 python -m app.main
 ```
 
-## macOS Apple Silicon Build
+## macOS build targets
 
-The packaging target is Apple Silicon (`arm64`). Ensure these files are present before building:
+The repository can build macOS app bundles for the target chosen by the person building it. Runtime binaries are not committed, so each builder supplies compatible local inputs first.
 
-- `third_party/macos/ffmpeg`
-- `third_party/macos/ffprobe`
-- `third_party/macos/whisper-cli`
-- any `@rpath` `.dylib` dependencies reported by `otool -L third_party/macos/whisper-cli`
+Supported targets:
 
-Helper scripts:
+- `arm64` for Apple Silicon
+- `x86_64` for Intel Macs
+- `universal2` for a real two-architecture bundle
 
-```bash
-bash scripts/build_whisper_cli.sh
+Place target-specific inputs in one of these directories:
+
+```text
+third_party/macos/arm64/
+third_party/macos/x86_64/
+third_party/macos/universal2/
 ```
 
-`ffmpeg` and `ffprobe` must be supplied from a license-compatible macOS arm64 build and recorded in `docs/FFMPEG_BUILD.md`.
+Each target directory must contain:
 
-The default build does not bundle model weights. When no local model is installed, `Current Model` shows a placeholder that opens Settings for checksum-verified model downloads. To create a bundle that includes `ggml-base.bin`, place it in `third_party/macos/models/` and build with:
+- `ffmpeg`
+- `ffprobe`
+- `whisper-cli`
+- any `@rpath` `.dylib` dependencies reported by `otool -L whisper-cli`
+
+The legacy flat directory `third_party/macos/` is still accepted for local one-target builds, but target-specific directories are preferred because they avoid mixing incompatible binaries.
+
+Build commands:
 
 ```bash
-TRANSCRIBER_LP_BUNDLE_MODEL=1 bash scripts/build_macos.sh
+bash scripts/build_macos.sh arm64
+bash scripts/build_macos.sh x86_64
+bash scripts/build_macos.sh universal2
+```
+
+`scripts/build_macos_auto.sh` builds for the current Mac architecture. `scripts/build_macos_intel.sh` and `scripts/build_macos_universal.sh` are compatibility wrappers around `scripts/build_macos.sh`.
+
+Before PyInstaller runs, `scripts/validate_macos_vendor.sh` checks that the supplied binaries and bundled `.dylib` files match the selected target. For `universal2`, the inputs must already be universal2; the build script does not create a fake universal app by combining only the launcher executable.
+
+To override the vendor input directory:
+
+```bash
+TRANSCRIBER_LP_VENDOR_DIR=/path/to/vendor bash scripts/build_macos.sh arm64
+```
+
+The default build does not bundle model weights. To include `ggml-base.bin`, place it in the selected vendor directory under `models/` and build with:
+
+```bash
+TRANSCRIBER_LP_BUNDLE_MODEL=1 bash scripts/build_macos.sh arm64
 ```
 
 Only use `TRANSCRIBER_LP_BUNDLE_MODEL=1` after completing `docs/MODEL_PROVENANCE.md` and including the required model license/provenance notices in the release artifact.
 
-Then run:
-
-```bash
-bash scripts/build_macos.sh
-```
-
-The application bundle is created in `dist/Transcriber-LP.app`.
-
-If the bundle is prepared for distribution, build or export it outside cloud-synced folders such as OneDrive and run:
+The application bundle is created in `dist/Transcriber-LP.app`. If the bundle is prepared for distribution, build or export it outside cloud-synced folders such as OneDrive and run:
 
 ```bash
 codesign --verify --deep --strict --verbose=2 dist/Transcriber-LP.app
-```
-
-## Intel / universal build
-
-The primary macOS target is Apple Silicon (`arm64`). Four build configurations are now available:
-
-### Automatic Build (Recommended)
-Let the build script automatically detect your architecture and available binaries:
-
-```bash
-bash scripts/build_macos_auto.sh
-```
-
-This script:
-- Detects your Mac's architecture (ARM64 or Intel)
-- Checks which binaries are available in `third_party/macos/`
-- Builds automatically:
-  - **ARM64-only** if only Apple Silicon binaries are present
-  - **Intel-only** if only Intel binaries are present
-  - **Universal** if both ARM64 and Intel binaries are present
-
-### ARM64 (Apple Silicon)
-```bash
-bash scripts/build_macos.sh
-```
-Creates `dist/Transcriber-LP.app` for Apple Silicon Macs.
-
-### Intel x86_64
-Requires Intel x86_64 versions of:
-- `third_party/macos/ffmpeg`
-- `third_party/macos/ffprobe`
-- `third_party/macos/whisper-cli`
-- any `@rpath` `.dylib` dependencies
-
-```bash
-bash scripts/build_macos_intel.sh
-```
-Creates `dist/Transcriber-LP.app` for Intel Macs.
-
-### Universal Binary (ARM64 + x86_64)
-Requires both ARM64 and Intel x86_64 binaries in `third_party/macos/`:
-
-```bash
-bash scripts/build_macos_universal.sh both
-```
-
-This:
-1. Builds ARM64 version
-2. Builds Intel x86_64 version
-3. Combines executables into a universal `Mach-O` binary
-4. Creates `dist/Transcriber-LP.app` that runs natively on both architectures
-
-You can also use this script to build for a single architecture:
-```bash
-bash scripts/build_macos_universal.sh arm64  # or 'intel' or 'both'
 ```
 
 ## Other platforms

@@ -54,6 +54,12 @@ third_party/**
 !third_party/
 !third_party/macos/
 !third_party/macos/.gitkeep
+!third_party/macos/arm64/
+!third_party/macos/arm64/.gitkeep
+!third_party/macos/x86_64/
+!third_party/macos/x86_64/.gitkeep
+!third_party/macos/universal2/
+!third_party/macos/universal2/.gitkeep
 whisper.cpp/
 *.gguf
 *.bin

@@ -13,7 +13,9 @@ Use this checklist before publishing a release artifact. It is intentionally str
 - Confirm bundled `ffmpeg`/`ffprobe` provenance is recorded in `docs/FFMPEG_BUILD.md`.
 - Confirm no model weights are bundled by default.
 - If a model is intentionally bundled, confirm `TRANSCRIBER_LP_BUNDLE_MODEL=1` was used and bundled model provenance is recorded in `docs/MODEL_PROVENANCE.md`.
-- Confirm `whisper-cli` and all required `@rpath` `.dylib` files are bundled.
+- Confirm `scripts/validate_macos_vendor.sh <target> <vendor-dir>` passes for the release target.
+- Confirm `whisper-cli` and all required `@rpath` `.dylib` files are bundled for the same target architecture.
+- For universal2 releases, confirm the Python/PyInstaller environment, Qt/PySide6 payload, `ffmpeg`, `ffprobe`, `whisper-cli`, and all bundled `.dylib` files are universal2.
 - Confirm exact third-party license texts are included with any packaged app bundle.
 - Confirm the FFmpeg build license classification is compatible with the intended distribution model.
 - Confirm the packaged app was smoke-tested on the target macOS architecture.
