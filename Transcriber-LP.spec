@@ -6,10 +6,11 @@ from pathlib import Path
 from PyInstaller.utils.hooks import collect_submodules
 
 root = Path.cwd()
-vendor = root / "third_party" / "macos"
+vendor = Path(os.environ.get("TRANSCRIBER_LP_VENDOR_DIR", root / "third_party" / "macos"))
 model_dir = vendor / "models"
 version = (root / "app" / "version.py").read_text().split('APP_VERSION = "')[1].split('"')[0]
 bundle_model = os.environ.get("TRANSCRIBER_LP_BUNDLE_MODEL") == "1"
+target_arch = os.environ.get("TRANSCRIBER_LP_TARGET_ARCH", "arm64")
 
 
 datas = [
@@ -68,7 +69,7 @@ exe = EXE(
     strip=False,
     upx=False,
     console=False,
-    target_arch='arm64',
+    target_arch=target_arch,
 )
 
 coll = COLLECT(
