@@ -2,6 +2,11 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.4.17 - 2026-06-05
+
+- Fixed output verification for media filenames whose stems contain dotted suffixes such as `.H264`.
+- Added transcriber output path tests for dotted stems and timestamp CSV sidecars.
+
 ## 0.4.16 - 2026-05-31
 
 - Fixed action-button disabled styling so unavailable primary, danger, and secondary actions no longer appear active.

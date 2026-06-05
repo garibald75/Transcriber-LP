@@ -76,10 +76,10 @@ class Transcriber:
         env = self._build_environment()
         self._run("WHISPER", whisper_cmd, log_cb, env=env)
 
-        output_file = out_base.with_suffix(f".{options.output_format}")
+        output_file = self._output_file(out_base, options.output_format)
         self._verify_output_file(output_file)
         if options.save_timestamps:
-            timestamp_file = out_base.with_suffix(".csv")
+            timestamp_file = self._output_file(out_base, "csv")
             self._verify_output_file(timestamp_file)
             self._log(log_cb, f"Timestamp sidecar saved: {timestamp_file}")
         self._log(log_cb, f"=== TRANSCRIBER END OK === {output_file}")
@@ -108,6 +108,10 @@ class Transcriber:
     def _verify_output_file(output_file: Path) -> None:
         if not output_file.exists():
             raise FileNotFoundError(f"Expected output not found: {output_file}")
+
+    @staticmethod
+    def _output_file(out_base: Path, extension: str) -> Path:
+        return Path(f"{out_base}.{extension.lstrip('.')}")
 
     @staticmethod
     def _log(log_cb, message: str) -> None:
