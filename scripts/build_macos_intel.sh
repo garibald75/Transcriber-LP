@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build script for ARM64 macOS (Apple Silicon)
+# Build script for Intel x86_64 macOS
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -57,10 +57,10 @@ fi
 python -m PyInstaller \
   --noconfirm \
   --clean \
-  Transcriber-LP.spec
+  Transcriber-LP-intel.spec
 
 xattr -cr dist/Transcriber-LP.app 2>/dev/null || true
 find dist/Transcriber-LP.app -xattrname com.apple.FinderInfo -exec xattr -d com.apple.FinderInfo {} + 2>/dev/null || true
 find dist/Transcriber-LP.app -xattrname com.apple.FinderInfo -exec xattr -d -s com.apple.FinderInfo {} + 2>/dev/null || true
 
-echo "Built dist/Transcriber-LP.app (ARM64 Apple Silicon)"
+echo "Built dist/Transcriber-LP.app (Intel x86_64)"

@@ -167,8 +167,58 @@ codesign --verify --deep --strict --verbose=2 dist/Transcriber-LP.app
 
 ## Intel / universal build
 
-The current packaging is targeted for Apple Silicon (`arm64`).
-For Intel support, build with a universal2 Python environment and compatible binaries, or use a separate Intel-specific build environment.
+The primary macOS target is Apple Silicon (`arm64`). Four build configurations are now available:
+
+### Automatic Build (Recommended)
+Let the build script automatically detect your architecture and available binaries:
+
+```bash
+bash scripts/build_macos_auto.sh
+```
+
+This script:
+- Detects your Mac's architecture (ARM64 or Intel)
+- Checks which binaries are available in `third_party/macos/`
+- Builds automatically:
+  - **ARM64-only** if only Apple Silicon binaries are present
+  - **Intel-only** if only Intel binaries are present
+  - **Universal** if both ARM64 and Intel binaries are present
+
+### ARM64 (Apple Silicon)
+```bash
+bash scripts/build_macos.sh
+```
+Creates `dist/Transcriber-LP.app` for Apple Silicon Macs.
+
+### Intel x86_64
+Requires Intel x86_64 versions of:
+- `third_party/macos/ffmpeg`
+- `third_party/macos/ffprobe`
+- `third_party/macos/whisper-cli`
+- any `@rpath` `.dylib` dependencies
+
+```bash
+bash scripts/build_macos_intel.sh
+```
+Creates `dist/Transcriber-LP.app` for Intel Macs.
+
+### Universal Binary (ARM64 + x86_64)
+Requires both ARM64 and Intel x86_64 binaries in `third_party/macos/`:
+
+```bash
+bash scripts/build_macos_universal.sh both
+```
+
+This:
+1. Builds ARM64 version
+2. Builds Intel x86_64 version
+3. Combines executables into a universal `Mach-O` binary
+4. Creates `dist/Transcriber-LP.app` that runs natively on both architectures
+
+You can also use this script to build for a single architecture:
+```bash
+bash scripts/build_macos_universal.sh arm64  # or 'intel' or 'both'
+```
 
 ## Other platforms
 
