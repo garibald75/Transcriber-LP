@@ -90,6 +90,18 @@ class UiActionStateTests(unittest.TestCase):
         self.assertEqual(self.window.model_download_progress.value(), 50)
         self.assertIn("Downloading Base", self.window.model_download_status_label.text())
 
+    def test_missing_model_prompt_can_start_default_download(self):
+        actions = []
+        self.window.model_combo.clear()
+        self.window._prompt_model_download = lambda: "download"
+        self.window.show_model_settings = lambda: actions.append("settings")
+        self.window.download_model = lambda key: actions.append(("download", key))
+
+        self.window.ensure_default_model_available(force=True)
+
+        self.assertEqual(actions, ["settings", ("download", "base")])
+        self.assertIn("Download a model", self.window.progress_label.text())
+
 
 if __name__ == "__main__":
     unittest.main()

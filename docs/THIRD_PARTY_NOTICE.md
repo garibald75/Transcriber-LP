@@ -41,7 +41,7 @@ Apple, macOS, Mac, Finder, and Apple Silicon are trademarks of Apple Inc., regis
 
 - Do not commit runtime binaries, model weights, `.bin` files, PyInstaller output, virtual environments, caches, or local backup files.
 - Do not bundle proprietary codecs, proprietary ffmpeg builds, proprietary speech engines, or model weights whose redistribution terms are unclear.
-- Do not bundle model weights by default; when no model is installed, the app opens Settings from the `Current Model` placeholder for checksum-verified model downloads.
+- Do not bundle model weights by default; when no model is installed, the app prompts for checksum-verified runtime model downloads or opens Settings to choose one.
 - If distributing `ffmpeg`/`ffprobe`, include the license text for the exact build and comply with LGPL/GPL source and relinking requirements.
 - If distributing `PySide6`/Qt, comply with LGPLv3 or GPLv3 obligations, including license text and user rights required by the selected license.
 - If distributing `whisper-cli`, include the related dynamic libraries required by that local build and keep their notices with the release artifact.

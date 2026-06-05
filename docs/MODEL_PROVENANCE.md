@@ -2,7 +2,7 @@
 
 Transcriber-LP can use local `whisper.cpp` model files such as `ggml-base.bin`. Model files are not committed to this repository and are not bundled by default.
 
-Before distributing a model inside a packaged app, record the exact provenance and redistribution terms below. The default app flow lets users open Settings from the `Current Model` placeholder when no model is installed, then verifies downloaded models by checksum before use.
+Before distributing a model inside a packaged app, record the exact provenance and redistribution terms below. The default app flow prompts users to download a checksum-verified model at runtime or open Settings to choose one when no model is installed.
 
 ## Required Release Information
 
@@ -20,7 +20,7 @@ Before distributing a model inside a packaged app, record the exact provenance a
 
 The app can download model files from the `ggerganov/whisper.cpp` Hugging Face repository. Those files are derived from OpenAI Whisper models and converted for use by `whisper.cpp`.
 
-Built-in downloads are enabled only for models that have a checksum in `app/core/model_manager.py`; models without a checksum must be installed manually after provenance has been verified. The default first-run placeholder opens Settings, where `ggml-base.bin` is one of the checksum-verified download options.
+Built-in downloads are enabled only for models that have a checksum in `app/core/model_manager.py`; models without a checksum must be installed manually after provenance has been verified. The default first-run prompt offers `ggml-base.bin`, and Settings exposes the checksum-verified download options.
 
 Do not redistribute a model file until its exact license and provenance have been verified for the specific artifact being shipped.
 

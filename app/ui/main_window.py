@@ -3,7 +3,7 @@ import time
 
 from pathlib import Path
 
-from PySide6.QtCore import QEvent, QItemSelectionModel, QObject, QSettings, Qt, QThreadPool
+from PySide6.QtCore import QEvent, QItemSelectionModel, QObject, QSettings, Qt, QThreadPool, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QPainter, QPalette, QPen
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
@@ -37,7 +37,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QUrl
 
-from app.core.model_manager import MODEL_DEFS, ModelManager
+from app.core.model_manager import DEFAULT_DOWNLOAD_MODEL_KEY, MODEL_DEFS, ModelManager
 from app.core.notices import THIRD_PARTY_NOTICE_TEXT
 from app.core.paths import outputs_dir
 from app.core.transcriber import TranscriptionOptions
@@ -481,6 +481,7 @@ class MainWindow(QMainWindow):
 
         self._build_ui()
         self.refresh_models()
+        QTimer.singleShot(0, self.ensure_default_model_available)
 
     def _build_ui(self) -> None:
         menu_bar = self.menuBar()
@@ -1292,7 +1293,42 @@ class MainWindow(QMainWindow):
 
         self.auto_model_prompted = True
         self.progress_label.setText("Download a model from Settings before transcribing.")
-        self.show_model_settings()
+        action = self._prompt_model_download()
+        if action == "download":
+            self.show_model_settings()
+            self.download_model(DEFAULT_DOWNLOAD_MODEL_KEY)
+            return
+        if action == "settings":
+            self.show_model_settings()
+
+    def _prompt_model_download(self) -> str:
+        model = self.model_manager.default_download_model()
+        prompt = QMessageBox(self)
+        prompt.setIcon(QMessageBox.Icon.Question)
+        prompt.setWindowTitle("Model required")
+        prompt.setText("No transcription model is installed.")
+        prompt.setInformativeText(
+            f"Download {model.label} ({model.size_label}) now, "
+            "or choose a different model in Settings."
+        )
+        download_button = prompt.addButton(
+            f"Download {model.label}",
+            QMessageBox.ButtonRole.AcceptRole,
+        )
+        settings_button = prompt.addButton(
+            "Choose model...",
+            QMessageBox.ButtonRole.ActionRole,
+        )
+        prompt.addButton(QMessageBox.StandardButton.Cancel)
+        prompt.setDefaultButton(download_button)
+        prompt.exec()
+
+        clicked = prompt.clickedButton()
+        if clicked == download_button:
+            return "download"
+        if clicked == settings_button:
+            return "settings"
+        return "cancel"
 
     def append_log(self, text: str) -> None:
         scroll_bar = self.log.verticalScrollBar()
@@ -1564,7 +1600,7 @@ class MainWindow(QMainWindow):
             "Transcriber-LP Manual:\n\n"
             "1) Seleziona un file audio o video con Browse o trascinalo nella finestra.\n"
             "2) Scegli il formato di uscita: txt, srt o vtt.\n"
-            "3) Controlla Current Model. Se non c'e un modello, clicca il placeholder per aprire Settings e scaricarlo.\n"
+            "3) Controlla Current Model. Se non c'e un modello, l'app propone il download o apre Settings.\n"
             "4) Opzionalmente imposta la lingua sorgente o lascia Auto-detect per la rilevazione automatica.\n"
             "5) Scegli se mantenere la lingua originale o tradurre in inglese.\n"
             "6) Abilita Timestamped output se vuoi timecode nel TXT e un CSV con i timestamp.\n"
@@ -1584,7 +1620,7 @@ class MainWindow(QMainWindow):
             "Note:\n"
             "- Le trascrizioni vengono salvate in ~/Library/Application Support/Transcriber-LP/outputs.\n"
             "- I modelli scaricati vengono memorizzati in ~/Library/Application Support/Transcriber-LP/models.\n"
-            "- Se non è presente nessun modello, Current Model apre Settings per scaricarne uno verificato.\n"
+            "- Se non è presente nessun modello, l'app propone un download verificato e Current Model apre Settings.\n"
             "- Assicurati di avere i binari ffmpeg e whisper-cli in third_party/macos quando crei il bundle.\n"
             "- Usa solo componenti open source e conserva le attribuzioni in docs/THIRD_PARTY_NOTICE.md.\n"
         )
