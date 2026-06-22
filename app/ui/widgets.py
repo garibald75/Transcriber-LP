@@ -8,9 +8,9 @@ from PySide6.QtGui import QDragEnterEvent, QDropEvent
 
 
 class DropLabel(QLabel):
-    def __init__(self, on_file_picked) -> None:
+    def __init__(self, on_files_picked) -> None:
         super().__init__("Drop audio or video")
-        self.on_file_picked = on_file_picked
+        self.on_files_picked = on_files_picked
         self.setObjectName("dropZone")
         self.setAlignment(Qt.AlignCenter)
         self.setAcceptDrops(True)
@@ -21,7 +21,11 @@ class DropLabel(QLabel):
             event.acceptProposedAction()
 
     def dropEvent(self, event: QDropEvent) -> None:
-        urls = event.mimeData().urls()
-        if urls:
-            self.on_file_picked(Path(urls[0].toLocalFile()))
+        paths = [
+            Path(url.toLocalFile())
+            for url in event.mimeData().urls()
+            if url.toLocalFile()
+        ]
+        if paths:
+            self.on_files_picked(paths)
             event.acceptProposedAction()

@@ -191,6 +191,25 @@ DESIGN_TOKENS = {
 }
 
 
+# Glyph + palette colour key shown next to each queued file. The "done" glyph is
+# the checkmark the user asked for; finished items stay in the queue rather than
+# being removed.
+QUEUE_STATUS_DISPLAY = {
+    "queued": ("○", "muted"),
+    "running": ("▶", "arrow"),
+    "done": ("✓", "primary_bg"),
+    "failed": ("✗", "danger_bg"),
+    "cancelled": ("⊘", "muted"),
+}
+QUEUE_STATUS_LABEL = {
+    "queued": "Queued",
+    "running": "Transcribing",
+    "done": "Done",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+}
+
+
 class ComboPopupHoverFilter(QObject):
     def __init__(self, view) -> None:
         super().__init__(view)
@@ -341,9 +360,30 @@ class DesignComboBox(QComboBox):
         item_height = DESIGN_TOKENS["control"]["combo_popup_item_height"] + 14
         visible_rows = min(self.count(), self.maxVisibleItems())
         popup_height = max(1, visible_rows) * item_height + DESIGN_TOKENS["control"]["combo_popup_padding"] * 2
-        frame.resize(max(self.width(), self.minimumWidth()), popup_height)
+
+        width = max(self.width(), self.minimumWidth())
+        below_left = self.mapToGlobal(self.rect().bottomLeft())
+        above_left = self.mapToGlobal(self.rect().topLeft())
+        screen = self.screen()
+        avail = screen.availableGeometry() if screen is not None else None
+
+        if avail is not None:
+            # Never taller than the screen, and flip above the combo when there is
+            # not enough room below — otherwise the popup gets clipped off-screen.
+            popup_height = min(popup_height, avail.height() - 16)
+            space_below = avail.bottom() - below_left.y()
+            space_above = above_left.y() - avail.top()
+            if popup_height <= space_below or space_below >= space_above:
+                pos_y = min(below_left.y(), avail.bottom() - popup_height)
+            else:
+                pos_y = max(avail.top(), above_left.y() - popup_height)
+            pos_x = max(avail.left(), min(below_left.x(), avail.right() - width))
+        else:
+            pos_x, pos_y = below_left.x(), below_left.y()
+
+        frame.resize(width, popup_height)
         frame.setStyleSheet(self.window().styleSheet())
-        frame.move(self.mapToGlobal(self.rect().bottomLeft()))
+        frame.move(pos_x, pos_y)
         frame.show()
         frame.raise_()
         self._popup_open = True
@@ -464,6 +504,10 @@ class MainWindow(QMainWindow):
         self.batch_items: list[dict[str, object]] = []
         self.current_worker = None
         self.current_mode: str | None = None
+        self.current_single_index: int | None = None
+        self.batch_index_map: list[int] = []
+        self.batch_total = 0
+        self.batch_completed = 0
         self.current_transcript_path: Path | None = None
         self.media_loaded = False
         self.download_started_at = 0.0
@@ -548,9 +592,9 @@ class MainWindow(QMainWindow):
         left_layout.setContentsMargins(0, 0, 14, 0)
         left_layout.setSpacing(9)
 
-        self.drop_zone = DropLabel(self.set_selected_file)
+        self.drop_zone = DropLabel(self.enqueue_paths)
         self.drop_zone.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
-        self.drop_zone.setToolTip("Drag and drop a media file here, or click Browse to select one.")
+        self.drop_zone.setToolTip("Drag and drop one or more media files here, or click Browse to add them.")
         left_layout.addWidget(self.drop_zone, stretch=1)
 
         self.browse_btn = QPushButton("Browse file…")
@@ -566,7 +610,7 @@ class MainWindow(QMainWindow):
         self.file_label.setWordWrap(True)
         left_layout.addWidget(self.file_label)
 
-        batch_box = QGroupBox("Batch Queue")
+        batch_box = QGroupBox("Queue")
         batch_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         batch_layout = QVBoxLayout(batch_box)
         batch_layout.setContentsMargins(16, 20, 16, 14)
@@ -577,7 +621,7 @@ class MainWindow(QMainWindow):
         self.batch_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.batch_list.itemSelectionChanged.connect(self.on_batch_selection_changed)
         self.batch_list.itemDoubleClicked.connect(lambda _item: self.retrieve_batch_output())
-        self.batch_list.setToolTip("Queued media files for sequential batch transcription.")
+        self.batch_list.setToolTip("Loaded media files. Completed files stay here with a ✓ checkmark.")
         batch_layout.addWidget(self.batch_list, stretch=1)
 
         batch_row_one = QHBoxLayout()
@@ -586,38 +630,53 @@ class MainWindow(QMainWindow):
         self.add_batch_btn.setProperty("role", "secondary")
         self.add_batch_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton))
         self.add_batch_btn.clicked.connect(self.add_batch_files)
-        self.add_batch_btn.setToolTip("Add multiple audio or video files to the batch queue.")
+        self.add_batch_btn.setToolTip("Add one or more audio or video files to the queue.")
         batch_row_one.addWidget(self.add_batch_btn)
 
         self.remove_batch_btn = QPushButton("Remove")
         self.remove_batch_btn.setProperty("role", "secondary")
         self.remove_batch_btn.clicked.connect(self.remove_selected_batch_item)
         self.remove_batch_btn.setEnabled(False)
-        self.remove_batch_btn.setToolTip("Remove the selected item from the batch queue.")
+        self.remove_batch_btn.setToolTip("Remove the selected item from the queue.")
         batch_row_one.addWidget(self.remove_batch_btn)
 
-        self.clear_batch_btn = QPushButton("Clear")
+        batch_row_one.addStretch(1)
+
+        self.clear_done_btn = QPushButton()
+        self.clear_done_btn.setObjectName("iconButton")
+        self.clear_done_btn.setProperty("role", "secondary")
+        self.clear_done_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogApplyButton))
+        self.clear_done_btn.clicked.connect(self.clear_done_items)
+        self.clear_done_btn.setEnabled(False)
+        self.clear_done_btn.setFixedWidth(42)
+        self.clear_done_btn.setToolTip("Clear done — remove completed (✓) files from the queue.")
+        batch_row_one.addWidget(self.clear_done_btn)
+
+        self.clear_batch_btn = QPushButton()
+        self.clear_batch_btn.setObjectName("iconButton")
         self.clear_batch_btn.setProperty("role", "secondary")
+        self.clear_batch_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TrashIcon))
         self.clear_batch_btn.clicked.connect(self.clear_batch_queue)
         self.clear_batch_btn.setEnabled(False)
-        self.clear_batch_btn.setToolTip("Clear all queued batch items.")
+        self.clear_batch_btn.setFixedWidth(42)
+        self.clear_batch_btn.setToolTip("Clear all — remove every file from the queue.")
         batch_row_one.addWidget(self.clear_batch_btn)
         batch_layout.addLayout(batch_row_one)
 
         batch_row_two = QHBoxLayout()
         batch_row_two.setSpacing(8)
-        self.batch_transcribe_btn = QPushButton("Transcribe batch")
+        self.batch_transcribe_btn = QPushButton("Transcribe queue")
         self.batch_transcribe_btn.setProperty("role", "primary")
         self.batch_transcribe_btn.clicked.connect(self.start_batch_transcription)
         self.batch_transcribe_btn.setEnabled(False)
-        self.batch_transcribe_btn.setToolTip("Transcribe every queued file sequentially.")
+        self.batch_transcribe_btn.setToolTip("Transcribe every not-yet-done file in the queue sequentially.")
         batch_row_two.addWidget(self.batch_transcribe_btn)
 
         self.retrieve_batch_btn = QPushButton("Retrieve output")
         self.retrieve_batch_btn.setProperty("role", "secondary")
         self.retrieve_batch_btn.clicked.connect(self.retrieve_batch_output)
         self.retrieve_batch_btn.setEnabled(False)
-        self.retrieve_batch_btn.setToolTip("Open the selected completed batch output in the transcript editor.")
+        self.retrieve_batch_btn.setToolTip("Open the selected completed output in the transcript editor.")
         batch_row_two.addWidget(self.retrieve_batch_btn)
         batch_layout.addLayout(batch_row_two)
 
@@ -871,11 +930,45 @@ class MainWindow(QMainWindow):
         self.set_theme(self.theme_name, persist=False)
         self.sync_action_controls()
 
-    def set_selected_file(self, path: Path) -> None:
+    def enqueue_paths(self, paths) -> list[Path]:
+        """Add one or more media files to the queue and select the first new one.
+
+        Used by drag-and-drop, Browse and Add files so every loaded file lives in
+        a single queue and stays there with a status glyph.
+        """
+        known_paths = {str(item["path"]) for item in self.batch_items}
+        added: list[Path] = []
+        for raw in paths:
+            path = Path(raw)
+            if str(path) in known_paths:
+                continue
+            self.batch_items.append({"path": path, "status": "queued", "output": None, "error": None})
+            known_paths.add(str(path))
+            added.append(path)
+
+        self.refresh_batch_list()
+        if added:
+            first_new = str(added[0])
+            for row, item in enumerate(self.batch_items):
+                if str(item["path"]) == first_new:
+                    self._select_queue_row(row)
+                    break
+            self.append_log(f"Added {len(added)} file(s) to the queue.")
+        elif paths:
+            self.append_log("File(s) already in the queue.")
+        return added
+
+    def _select_queue_row(self, row: int) -> None:
+        if not (0 <= row < len(self.batch_items)):
+            return
+        self.batch_list.blockSignals(True)
+        self.batch_list.setCurrentRow(row)
+        self.batch_list.blockSignals(False)
+        path = Path(self.batch_items[row]["path"])
         self.selected_file = path
         self.file_label.setText(str(path))
-        self.append_log(f"Selected: {path}")
-        self.load_media(path)
+        if path.exists():
+            self.load_media(path)
         self.sync_action_controls()
 
     def browse_file(self) -> None:
@@ -886,7 +979,7 @@ class MainWindow(QMainWindow):
             "Media files (*.mp4 *.mov *.mkv *.avi *.mp3 *.wav *.m4a *.aac *.flac);;All files (*.*)",
         )
         if file_path:
-            self.set_selected_file(Path(file_path))
+            self.enqueue_paths([Path(file_path)])
 
     def add_batch_files(self) -> None:
         file_paths, _ = QFileDialog.getOpenFileNames(
@@ -895,23 +988,8 @@ class MainWindow(QMainWindow):
             str(Path.home()),
             "Media files (*.mp4 *.mov *.mkv *.avi *.mp3 *.wav *.m4a *.aac *.flac);;All files (*.*)",
         )
-        if not file_paths:
-            return
-
-        known_paths = {str(item["path"]) for item in self.batch_items}
-        added = 0
-        for file_path in file_paths:
-            path = Path(file_path)
-            if str(path) in known_paths:
-                continue
-            self.batch_items.append({"path": path, "status": "queued", "output": None, "error": None})
-            known_paths.add(str(path))
-            added += 1
-
-        if added and self.selected_file is None:
-            self.set_selected_file(Path(file_paths[0]))
-        self.refresh_batch_list()
-        self.append_log(f"Batch import: added {added} file(s).")
+        if file_paths:
+            self.enqueue_paths([Path(p) for p in file_paths])
 
     def remove_selected_batch_item(self) -> None:
         row = self.batch_list.currentRow()
@@ -919,33 +997,51 @@ class MainWindow(QMainWindow):
             return
         removed = self.batch_items.pop(row)
         self.refresh_batch_list()
-        self.append_log(f"Batch item removed: {removed['path']}")
+        self.append_log(f"Removed from queue: {removed['path']}")
+
+    def clear_done_items(self) -> None:
+        before = len(self.batch_items)
+        self.batch_items = [item for item in self.batch_items if item.get("status") != "done"]
+        removed = before - len(self.batch_items)
+        self.refresh_batch_list()
+        self.append_log(f"Cleared {removed} completed item(s) from the queue.")
 
     def clear_batch_queue(self) -> None:
         self.batch_items.clear()
         self.refresh_batch_list()
-        self.append_log("Batch queue cleared.")
+        self.append_log("Queue cleared.")
 
     def refresh_batch_list(self) -> None:
         current_row = self.batch_list.currentRow()
+        colors = THEME_PALETTES[self.theme_name]
+        self.batch_list.blockSignals(True)
         self.batch_list.clear()
         for item in self.batch_items:
             path = Path(item["path"])
             status = str(item.get("status") or "queued")
+            glyph, color_key = QUEUE_STATUS_DISPLAY.get(status, QUEUE_STATUS_DISPLAY["queued"])
             output = item.get("output")
-            suffix = f" -> {Path(output).name}" if output else ""
-            list_item = QListWidgetItem(f"[{status}] {path.name}{suffix}")
-            list_item.setToolTip(str(path))
+            suffix = f"  →  {Path(output).name}" if output else ""
+            list_item = QListWidgetItem(f"{glyph}  {path.name}{suffix}")
+            list_item.setForeground(QColor(colors.get(color_key, colors["list_text"])))
+            status_label = QUEUE_STATUS_LABEL.get(status, status)
+            tooltip = f"{status_label} — {path}"
+            if item.get("error"):
+                tooltip += f"\n{item['error']}"
+            list_item.setToolTip(tooltip)
             self.batch_list.addItem(list_item)
 
         if self.batch_items:
             self.batch_list.setCurrentRow(max(0, min(current_row, len(self.batch_items) - 1)))
+        self.batch_list.blockSignals(False)
         self.sync_action_controls()
 
     def on_batch_selection_changed(self) -> None:
         row = self.batch_list.currentRow()
         if 0 <= row < len(self.batch_items):
             path = Path(self.batch_items[row]["path"])
+            self.selected_file = path
+            self.file_label.setText(str(path))
             if path.exists():
                 self.load_media(path)
         self.sync_action_controls()
@@ -955,6 +1051,8 @@ class MainWindow(QMainWindow):
 
     def sync_action_controls(self) -> None:
         has_items = bool(self.batch_items)
+        has_done = any(item.get("status") == "done" for item in self.batch_items)
+        has_pending = any(item.get("status") != "done" for item in self.batch_items)
         row = self.batch_list.currentRow()
         has_selection = 0 <= row < len(self.batch_items)
         selected_output = self.batch_items[row].get("output") if has_selection else None
@@ -981,8 +1079,9 @@ class MainWindow(QMainWindow):
         self.save_timestamps_checkbox.setEnabled(not is_busy)
         self.add_batch_btn.setEnabled(not is_busy)
         self.remove_batch_btn.setEnabled(has_selection and not is_busy)
+        self.clear_done_btn.setEnabled(has_done and not is_busy)
         self.clear_batch_btn.setEnabled(has_items and not is_busy)
-        self.batch_transcribe_btn.setEnabled(has_items and has_model and not is_busy)
+        self.batch_transcribe_btn.setEnabled(has_pending and has_model and not is_busy)
         self.retrieve_batch_btn.setEnabled(bool(selected_output) and not is_busy)
         self.play_pause_btn.setEnabled(self.media_loaded)
         self.media_stop_btn.setEnabled(media_can_stop)
@@ -991,8 +1090,17 @@ class MainWindow(QMainWindow):
         self._sync_button_cursors()
 
     def start_batch_transcription(self) -> None:
-        if not self.batch_items:
-            QMessageBox.warning(self, "Missing batch", "Add files to the batch queue first.")
+        # Only transcribe files that are not already done, so completed (✓) items
+        # stay in the queue without being re-run.
+        pending = [
+            index for index, item in enumerate(self.batch_items)
+            if item.get("status") != "done"
+        ]
+        if not pending:
+            if self.batch_items:
+                QMessageBox.information(self, "Nothing to do", "Every file in the queue is already transcribed.")
+            else:
+                QMessageBox.warning(self, "Missing files", "Add files to the queue first.")
             return
 
         model_key = self.current_model_key()
@@ -1014,9 +1122,11 @@ class MainWindow(QMainWindow):
         if not output_dir:
             return
 
-        stem_counts = _count_stems([Path(item["path"]) for item in self.batch_items])
+        stem_counts = _count_stems([Path(self.batch_items[i]["path"]) for i in pending])
         options_list: list[TranscriptionOptions] = []
-        for index, item in enumerate(self.batch_items):
+        self.batch_index_map = pending
+        for position, index in enumerate(pending):
+            item = self.batch_items[index]
             path = Path(item["path"])
             item["status"] = "queued"
             item["output"] = None
@@ -1029,15 +1139,19 @@ class MainWindow(QMainWindow):
                     output_format=self.output_combo.currentText(),
                     target_language=self.target_language_combo.currentData() or "as_source",
                     save_timestamps=self.save_timestamps_checkbox.isChecked(),
-                    output_name=_batch_output_name(path, index, stem_counts),
+                    output_name=_batch_output_name(path, position, stem_counts),
                     output_dir=output_dir,
                 )
             )
 
         self.refresh_batch_list()
-        self.progress.setRange(0, 0)
-        self.progress_label.setText(f"Batch transcription running: {len(options_list)} file(s)")
-        self.append_log(f"Starting batch transcription: {len(options_list)} file(s)")
+        self.batch_total = len(options_list)
+        self.batch_completed = 0
+        self.progress.setRange(0, self.batch_total)
+        self.progress.setValue(0)
+        self.progress.setFormat("%v / %m")
+        self.progress_label.setText(f"Transcribing queue: 0/{self.batch_total} done")
+        self.append_log(f"Starting queue transcription: {self.batch_total} file(s)")
 
         worker = BatchTranscribeWorker(options_list)
         worker.signals.log.connect(self.append_log)
@@ -1052,30 +1166,42 @@ class MainWindow(QMainWindow):
         self.sync_action_controls()
         self.thread_pool.start(worker)
 
+    def _batch_item_index(self, worker_index: int) -> int:
+        if 0 <= worker_index < len(self.batch_index_map):
+            return self.batch_index_map[worker_index]
+        return worker_index
+
     def on_batch_item_started(self, index: int, input_path) -> None:
-        self.batch_items[index]["status"] = "running"
+        actual = self._batch_item_index(index)
+        self.batch_items[actual]["status"] = "running"
         self.refresh_batch_list()
-        self.batch_list.setCurrentRow(index)
-        self.selected_file = Path(input_path)
-        self.file_label.setText(str(input_path))
-        self.load_media(Path(input_path))
-        self.progress_label.setText(f"Batch item {index + 1}/{len(self.batch_items)}: {Path(input_path).name}")
+        self._select_queue_row(actual)
+        self.progress_label.setText(
+            f"Transcribing {self.batch_completed + 1}/{self.batch_total}: {Path(input_path).name}"
+        )
 
     def on_batch_item_finished(self, index: int, output_path) -> None:
+        actual = self._batch_item_index(index)
         output_path = Path(output_path)
-        self.batch_items[index]["status"] = "done"
-        self.batch_items[index]["output"] = output_path
-        self.batch_items[index]["error"] = None
+        self.batch_items[actual]["status"] = "done"
+        self.batch_items[actual]["output"] = output_path
+        self.batch_items[actual]["error"] = None
+        self.batch_completed += 1
+        self.progress.setValue(self.batch_completed)
         self.refresh_batch_list()
-        self.batch_list.setCurrentRow(index)
+        self._select_queue_row(actual)
         self.load_transcript(output_path)
+        self.progress_label.setText(f"Transcribing queue: {self.batch_completed}/{self.batch_total} done")
 
     def on_batch_item_failed(self, index: int, message: str) -> None:
-        self.batch_items[index]["status"] = "failed"
-        self.batch_items[index]["error"] = message
+        actual = self._batch_item_index(index)
+        self.batch_items[actual]["status"] = "failed"
+        self.batch_items[actual]["error"] = message
+        self.batch_completed += 1
+        self.progress.setValue(self.batch_completed)
         self.refresh_batch_list()
-        self.batch_list.setCurrentRow(index)
-        self.append_log(f"Batch item failed: {self.batch_items[index]['path']} :: {message}")
+        self._select_queue_row(actual)
+        self.append_log(f"Queue item failed: {self.batch_items[actual]['path']} :: {message}")
 
     def on_batch_finished(self, results) -> None:
         completed = sum(1 for item in self.batch_items if item.get("status") == "done")
@@ -1083,9 +1209,9 @@ class MainWindow(QMainWindow):
         self.progress.setRange(0, 1)
         self.progress.setValue(1)
         self.progress.setFormat("Done")
-        self.progress_label.setText(f"Batch complete: {completed} done, {failed} failed")
-        self.append_log(f"Batch complete: {completed} done, {failed} failed")
-        QMessageBox.information(self, "Batch completed", f"Completed: {completed}\nFailed: {failed}")
+        self.progress_label.setText(f"Queue complete: {completed} done, {failed} failed")
+        self.append_log(f"Queue complete: {completed} done, {failed} failed")
+        QMessageBox.information(self, "Queue completed", f"Completed: {completed}\nFailed: {failed}")
         self.current_worker = None
         self.current_mode = None
         self.sync_action_controls()
@@ -1372,6 +1498,15 @@ class MainWindow(QMainWindow):
 
         self.progress_label.setText("Preparing transcription...")
 
+        # Make sure the file is represented in the queue and mark it running, so it
+        # stays visible and gets a ✓ when finished instead of disappearing.
+        self.current_single_index = self._ensure_queue_index(self.selected_file)
+        item = self.batch_items[self.current_single_index]
+        item["status"] = "running"
+        item["error"] = None
+        self.refresh_batch_list()
+        self._select_queue_row(self.current_single_index)
+
         opts = TranscriptionOptions(
             input_file=self.selected_file,
             model_file=model_file,
@@ -1382,6 +1517,7 @@ class MainWindow(QMainWindow):
             output_dir=output_dir,
         )
         self.progress.setRange(0, 0)
+        self.progress.setFormat("")
         self.append_log("Starting transcription...")
         worker = TranscribeWorker(opts)
         worker.signals.log.connect(self.append_log)
@@ -1393,8 +1529,23 @@ class MainWindow(QMainWindow):
         self.sync_action_controls()
         self.thread_pool.start(worker)
 
+    def _ensure_queue_index(self, path: Path) -> int:
+        target = str(path)
+        for index, item in enumerate(self.batch_items):
+            if str(item["path"]) == target:
+                return index
+        self.batch_items.append({"path": Path(path), "status": "queued", "output": None, "error": None})
+        return len(self.batch_items) - 1
+
     def on_transcription_finished(self, output_path) -> None:
         output_path = Path(output_path)
+        if self.current_single_index is not None and 0 <= self.current_single_index < len(self.batch_items):
+            item = self.batch_items[self.current_single_index]
+            item["status"] = "done"
+            item["output"] = output_path
+            item["error"] = None
+            self.refresh_batch_list()
+        self.current_single_index = None
         self.progress.setRange(0, 1)
         self.progress.setValue(1)
         self.progress.setFormat("Done")
@@ -1407,6 +1558,12 @@ class MainWindow(QMainWindow):
         self.sync_action_controls()
 
     def on_worker_error(self, message: str) -> None:
+        if self.current_single_index is not None and 0 <= self.current_single_index < len(self.batch_items):
+            item = self.batch_items[self.current_single_index]
+            item["status"] = "failed"
+            item["error"] = message
+            self.refresh_batch_list()
+        self.current_single_index = None
         self.progress.setRange(0, 1)
         self.progress.setValue(0)
         self.progress.setFormat("%p%")
@@ -1588,6 +1745,11 @@ class MainWindow(QMainWindow):
 
     def on_transcription_cancelled(self):
         self.append_log("Transcription cancelled.")
+        if self.current_single_index is not None and 0 <= self.current_single_index < len(self.batch_items):
+            # Return the file to the queue so it can be retried.
+            self.batch_items[self.current_single_index]["status"] = "queued"
+            self.refresh_batch_list()
+        self.current_single_index = None
         self.progress.setRange(0, 1)
         self.progress.setValue(0)
         self.progress_label.setText("Cancelled")
@@ -1598,17 +1760,19 @@ class MainWindow(QMainWindow):
     def show_help(self) -> None:
         manual = (
             "Transcriber-LP Manual:\n\n"
-            "1) Seleziona un file audio o video con Browse o trascinalo nella finestra.\n"
+            "1) Aggiungi uno o piu file audio/video con Browse, Add files o trascinandoli nella finestra: ogni file entra nella Queue.\n"
             "2) Scegli il formato di uscita: txt, srt o vtt.\n"
             "3) Controlla Current Model. Se non c'e un modello, l'app propone il download o apre Settings.\n"
             "4) Opzionalmente imposta la lingua sorgente o lascia Auto-detect per la rilevazione automatica.\n"
             "5) Scegli se mantenere la lingua originale o tradurre in inglese.\n"
             "6) Abilita Timestamped output se vuoi timecode nel TXT e un CSV con i timestamp.\n"
-            "7) Clicca Transcribe per avviare; usa Stop per annullare la trascrizione in corso.\n\n"
-            "Batch:\n"
-            "- Usa Add files nella Batch Queue per importare piu file.\n"
-            "- Usa Transcribe batch per trascrivere la coda in sequenza nello stesso output folder.\n"
-            "- Le righe mostrano lo stato; Retrieve output riapre un output completato nell'editor.\n\n"
+            "7) Clicca Transcribe per il file selezionato; usa Stop per annullare la trascrizione in corso.\n\n"
+            "Queue:\n"
+            "- I file restano nella coda: ▶ in corso, ✓ completato, ✗ fallito. Non spariscono dopo la trascrizione.\n"
+            "- Usa Transcribe queue per trascrivere in sequenza tutti i file non ancora completati nello stesso output folder.\n"
+            "- La barra mostra l'avanzamento (X/Y) e quali file sono stati fatti.\n"
+            "- Le icone in basso a destra: ✓ rimuove i completati (Clear done), il cestino svuota tutta la coda (Clear all).\n"
+            "- Retrieve output (o doppio click) riapre un output completato nell'editor.\n\n"
             "Review:\n"
             "- Il file sorgente selezionato viene caricato nel player di anteprima.\n"
             "- Quando la trascrizione finisce, il file generato si apre nel Transcript Editor.\n"
@@ -1952,6 +2116,15 @@ class MainWindow(QMainWindow):
                             [
                                 "min-height: 32px;",
                                 "padding: 6px 10px;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QPushButton#iconButton",
+                        "\n".join(
+                            [
+                                "min-height: 32px;",
+                                "padding: 4px;",
                             ]
                         ),
                     ),

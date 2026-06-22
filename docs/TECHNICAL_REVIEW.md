@@ -8,17 +8,17 @@ Transcriber-LP is a local-first macOS desktop app for creating `txt`, `srt`, and
 
 ## Architecture
 
-- `app/ui/` contains the PySide6 desktop interface, menus, responsive layout, media preview, transcript editor, batch queue, theme handling, help dialogs, and user interaction flow.
+- `app/ui/` contains the PySide6 desktop interface, menus, responsive layout, media preview, transcript editor, the unified transcription queue, theme handling, help dialogs, and user interaction flow.
 - `app/core/` contains transcription command construction, subprocess orchestration, timestamped text and sidecar support, model discovery, checksum-gated model downloads, and runtime paths.
 - `scripts/` contains repeatable setup and packaging helpers for macOS Apple Silicon builds.
-- `tests/` covers import stability, command construction, timestamp export flags, checksum behavior, model manager edge cases, and batch output naming helpers.
+- `tests/` covers import stability, command construction, timestamp export flags, checksum behavior, model manager edge cases, and queue output naming helpers.
 
 The UI keeps a small atomic design token layer for shared control metrics such as field height, radius, padding, dropdown width, and popup item spacing. This keeps Settings controls visually aligned across light and dark themes.
 
 ## Reliability Choices
 
 - Transcription runs through local command-line tools rather than a hosted API.
-- Batch import processes queued media sequentially, which keeps resource use predictable and makes per-item logging easier to inspect.
+- The unified queue processes media sequentially, which keeps resource use predictable and makes per-item logging easier to inspect. Completed files stay in the queue with a status glyph rather than being removed.
 - The review workflow keeps the source media preview and transcript editor in the same window so a user can correct recognition errors or typos immediately after generation.
 - Optional timestamp output rewrites `txt` transcripts with segment timecodes while preserving a CSV sidecar for downstream timing workflows.
 - If no model is installed, the app prompts for a user-initiated runtime download or opens Settings to choose one; downloaded models are accepted only after checksum verification.

@@ -1,6 +1,6 @@
 # Transcriber-LP User Manual
 
-Current version: `0.4.19`
+Current version: `0.5.0`
 
 Versioning starts at `0.1.0` for the first tracked public-ready baseline. The source of truth is `app/version.py`.
 
@@ -20,24 +20,39 @@ For a packaged build, open `dist/Transcriber-LP.app`.
 
 ## Transcribe a File
 
-1. Drag an audio/video file into the drop area, or use `Browse file...`.
+1. Drag one or more audio/video files into the drop area, or use `Browse file...` or `Add files`. Every file joins the **Queue** and stays there.
 2. Choose the output format: `txt`, `srt`, or `vtt`.
 3. Select a model from the model list.
 4. Leave source language on `Auto-detect`, or choose a known language.
 5. Keep the original language, or choose `Translate to English`.
 6. Enable `Timestamped output` if you want timecodes in `txt` output and a timestamp CSV sidecar.
-7. Click `Transcribe`.
+7. Select a file in the queue and click `Transcribe`, or click `Transcribe queue` to process every not-yet-done file in sequence.
 8. Choose the output folder when prompted.
 
 Use `Stop` to cancel a running transcription.
 
-## Batch Import
+## The Queue
 
-Use `Add files` in the Batch Queue to import multiple audio or video files. Click `Transcribe batch`, choose one output folder, and Transcriber-LP processes the queue sequentially with the current model, language, translation, and output format settings.
+Single-file and batch transcription share one **Queue**. Drag and drop, `Browse file...`, and `Add files` all add files to it, and files **stay in the queue after transcribing** instead of disappearing.
 
-Each queue item shows its status while the batch runs. Completed items keep their generated output path; select a completed item and click `Retrieve output` to load the source media in the preview player and open the generated transcript in the editor.
+Each row shows a status glyph next to the file name:
 
-If multiple queued files share the same base filename, batch output names include a numeric suffix to avoid overwriting earlier files.
+- `○` queued
+- `▶` transcribing
+- `✓` done (the row also shows the generated output file name)
+- `✗` failed
+- `⊘` cancelled
+
+`Transcribe queue` asks for one output folder, then processes every file that is **not already done** in sequence with the current model, language, translation, and output format settings. Files that already show `✓` are skipped, so re-running the queue does not redo finished work. The progress bar shows `X / Y` and the status line names the file currently being transcribed and how many are done.
+
+Queue controls:
+
+- **Remove** — remove the selected file from the queue.
+- **Clear done** (✓ icon, bottom-right) — remove all completed (`✓`) files from the queue.
+- **Clear all** (trash icon, bottom-right) — empty the queue.
+- **Retrieve output** — select a completed item (or double-click it) to load its source media in the preview player and open the generated transcript in the editor.
+
+If multiple queued files share the same base filename, queue output names include a numeric suffix to avoid overwriting earlier files.
 
 ## Timestamp Export
 
@@ -121,7 +136,7 @@ Transcription files are saved to the folder selected when transcription starts. 
 ~/Library/Application Support/Transcriber-LP/outputs
 ```
 
-Batch outputs, edited transcripts, subtitle files, and timestamp CSV sidecars remain local user files. They are not uploaded by the app and are not part of the packaged application bundle.
+Queue outputs, edited transcripts, subtitle files, and timestamp CSV sidecars remain local user files. They are not uploaded by the app and are not part of the packaged application bundle.
 
 ## Packaging Requirements
 
