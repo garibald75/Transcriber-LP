@@ -10,6 +10,7 @@ Transcriber-LP follows semantic versioning. The first tracked baseline starts at
 - Made "Transcribe queue" skip files that are already done instead of re-running the whole queue.
 - Added icon-only Clear done (removes completed items) and Clear all (empties the queue) buttons with tooltips.
 - Fixed combo-box popups (including Source language) being clipped off-screen by clamping their height and flipping them above the control when there is not enough room below.
+- Trimmed the stacked minimum heights (drop zone, queue list, media preview, editor, log) and tightened Settings spacing so the main window fits within a full-HD (1080p) height instead of forcing a ~1040px minimum.
 
 ## 0.4.19 - 2026-06-06
 
