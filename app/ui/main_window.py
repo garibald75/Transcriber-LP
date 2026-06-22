@@ -179,13 +179,13 @@ DESIGN_TOKENS = {
         "menu": 8,
     },
     "control": {
-        "min_height": 34,
+        "min_height": 32,
         "horizontal_padding": 12,
         "combo_arrow_width": 36,
         "combo_min_width": 190,
-        "combo_popup_item_height": 34,
+        "combo_popup_item_height": 32,
         "combo_popup_padding": 8,
-        "settings_label_height": 18,
+        "settings_label_height": 15,
         "model_download_min_width": 96,
     },
 }
@@ -497,7 +497,8 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(f"Transcriber-LP {APP_VERSION}")
-        self.resize(1320, 640)
+        # Keep the window within a full-HD height (≤1050) so it fits on 1080p displays.
+        self.resize(1320, 900)
         self.thread_pool = QThreadPool.globalInstance()
         self.model_manager = ModelManager()
         self.selected_file: Path | None = None
@@ -590,7 +591,7 @@ class MainWindow(QMainWindow):
         left.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(0, 0, 14, 0)
-        left_layout.setSpacing(9)
+        left_layout.setSpacing(6)
 
         self.drop_zone = DropLabel(self.enqueue_paths)
         self.drop_zone.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
@@ -613,11 +614,11 @@ class MainWindow(QMainWindow):
         batch_box = QGroupBox("Queue")
         batch_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         batch_layout = QVBoxLayout(batch_box)
-        batch_layout.setContentsMargins(16, 20, 16, 14)
-        batch_layout.setSpacing(8)
+        batch_layout.setContentsMargins(16, 16, 16, 12)
+        batch_layout.setSpacing(6)
 
         self.batch_list = QListWidget()
-        self.batch_list.setMinimumHeight(96)
+        self.batch_list.setMinimumHeight(64)
         self.batch_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.batch_list.itemSelectionChanged.connect(self.on_batch_selection_changed)
         self.batch_list.itemDoubleClicked.connect(lambda _item: self.retrieve_batch_output())
@@ -684,8 +685,8 @@ class MainWindow(QMainWindow):
 
         settings_box = QGroupBox("⚙ Settings")
         settings_layout = QVBoxLayout(settings_box)
-        settings_layout.setContentsMargins(16, 20, 16, 14)
-        settings_layout.setSpacing(12)
+        settings_layout.setContentsMargins(16, 16, 16, 12)
+        settings_layout.setSpacing(8)
 
         def settings_label(text: str) -> QLabel:
             label = QLabel(text)
@@ -700,7 +701,7 @@ class MainWindow(QMainWindow):
             field_group.setObjectName("settingsFieldGroup")
             field_group_layout = QVBoxLayout(field_group)
             field_group_layout.setContentsMargins(0, 0, 0, 0)
-            field_group_layout.setSpacing(6)
+            field_group_layout.setSpacing(4)
             field_group_layout.addWidget(settings_label(text))
             field_group_layout.addWidget(field)
             settings_layout.addWidget(field_group)
@@ -806,7 +807,7 @@ class MainWindow(QMainWindow):
         media_layout.setSpacing(8)
         self.video_widget = QVideoWidget()
         self.video_widget.setObjectName("videoPreview")
-        self.video_widget.setMinimumHeight(100)
+        self.video_widget.setMinimumHeight(70)
         self.video_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         media_layout.addWidget(self.video_widget, stretch=1)
 
@@ -886,7 +887,7 @@ class MainWindow(QMainWindow):
         self.transcript_editor.setObjectName("transcriptEditor")
         self.transcript_editor.setPlaceholderText("Completed transcripts open here for quick correction.")
         self.transcript_editor.setEnabled(False)
-        self.transcript_editor.setMinimumHeight(90)
+        self.transcript_editor.setMinimumHeight(60)
         self.transcript_editor.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.transcript_editor.setToolTip("Edit the generated txt, srt, or vtt transcript.")
         editor_layout.addWidget(self.transcript_editor, stretch=1)
@@ -912,7 +913,7 @@ class MainWindow(QMainWindow):
         self.log = QPlainTextEdit()
         self.log.setObjectName("logPanel")
         self.log.setReadOnly(True)
-        self.log.setMinimumHeight(70)
+        self.log.setMinimumHeight(54)
         self.log.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.log.setToolTip("Detailed log output from transcription and downloads.")
         log_panel_layout.addWidget(self.log, stretch=1)
