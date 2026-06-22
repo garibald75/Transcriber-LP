@@ -26,7 +26,7 @@ CI runs these checks on Python 3.9 and 3.11 using `.github/workflows/ci.yml`.
 - Command construction tests for FFmpeg and `whisper-cli`, including explicit `-l auto` language detection and optional timestamp CSV sidecar export
 - Transcriber output path and timestamped text tests for dotted media stems, TXT timecodes, and timestamp CSV sidecars
 - Model manager tests for model discovery, missing models, and checksum enforcement
-- UI helper tests for batch output naming and duplicate filename handling
+- UI helper tests for queue output naming and duplicate filename handling
 
 ## Manual Smoke Tests
 
@@ -36,7 +36,7 @@ CI runs these checks on Python 3.9 and 3.11 using `.github/workflows/ci.yml`.
 python -m app.main
 ```
 
-Verify file selection, drag and drop, output format selection, timestamped output selection, model selection, theme switching, `Transcribe`, `Stop`, and the Help menu.
+Verify file selection, drag and drop (single and multiple files), output format selection, timestamped output selection, model selection, theme switching, `Transcribe`, `Stop`, and the Help menu.
 
 Also verify these UI interaction states:
 
@@ -45,17 +45,20 @@ Also verify these UI interaction states:
 - The log `Auto-scroll` checkbox shows a visible checked marker and preserves scroll position when disabled.
 - The media preview loads the selected source and the transcript editor opens generated `txt`, `srt`, and `vtt` files for quick correction.
 - `Save changes` shows an overwrite confirmation before writing transcript edits back to the generated file.
-- Window resizing keeps the main workflow, batch queue, preview player, editor, and log usable without overlapping controls.
+- Window resizing keeps the main workflow, queue, preview player, editor, and log usable without overlapping controls.
+- Source language (and other) dropdown popups open fully on screen, including near the bottom edge where they should flip above the control instead of being clipped.
 
-### Batch Import
+### Queue
 
 With two or more short media files:
 
-- use `Add files` to populate the Batch Queue
-- confirm `Remove` and `Clear` update the queue without affecting files on disk
-- run `Transcribe batch` with one shared output folder
-- confirm queue items move through pending, running, done, and failed states as appropriate
-- select a completed item and use `Retrieve output` to reload the source media and generated transcript
+- add files via drag and drop, `Browse file...`, and `Add files`, and confirm each one appears in the queue and stays after transcribing
+- transcribe a single selected file with `Transcribe` and confirm its queue row gets a `✓` instead of disappearing
+- confirm rows show the correct status glyph (`○` queued, `▶` running, `✓` done, `✗` failed, `⊘` cancelled)
+- confirm `Remove`, `Clear done`, and `Clear all` update the queue without affecting files on disk (`Clear done` removes only `✓` rows)
+- run `Transcribe queue` with one shared output folder and confirm the progress bar shows `X / Y` and the status line names the current file
+- confirm `Transcribe queue` skips files already marked `✓` instead of re-running them
+- select a completed item and use `Retrieve output` (or double-click) to reload the source media and generated transcript
 - test duplicate base filenames and confirm outputs receive numeric suffixes instead of overwriting each other
 
 ### macOS Bundle
@@ -80,7 +83,7 @@ For a packaged Apple Silicon build, confirm:
 - `Auto-detect` language mode passes `-l auto`; known-language audio can be forced with a language code such as `-l it`
 - enabling `Timestamped output` with `txt` prefixes transcript lines with timecodes and produces a `.csv` sidecar
 - `srt` and `vtt` outputs contain subtitle timecodes in the main file
-- batch transcription writes one output per queued source and keeps completed outputs retrievable from the queue
+- queue transcription writes one output per queued source and keeps completed outputs retrievable from the queue
 
 ## Known Release Checks
 
@@ -94,4 +97,4 @@ For a packaged Apple Silicon build, confirm:
 - Add subprocess-mocked tests for `app/core/transcriber.py`.
 - Add model-download tests with mocked HTTP responses.
 - Add a minimal smoke test script for packaged bundle validation.
-- Add widget-level tests for the batch queue and transcript editor when a stable Qt test harness is available.
+- Add widget-level tests for the queue and transcript editor when a stable Qt test harness is available.

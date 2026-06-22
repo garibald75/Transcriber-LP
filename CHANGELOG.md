@@ -2,6 +2,15 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.5.0 - 2026-06-22
+
+- Unified single-file and batch transcription into one Queue: every file loaded via drag-and-drop, Browse, or Add files now joins the queue and stays there after transcribing.
+- Replaced the textual `[status]` prefix with status glyphs — ○ queued, ▶ running, ✓ done, ✗ failed — so completed files keep a checkmark instead of disappearing.
+- Showed queue progress as `X / Y` on the progress bar with a "Transcribing N/total: file" status line so it is clear what is running and which files are done.
+- Made "Transcribe queue" skip files that are already done instead of re-running the whole queue.
+- Added icon-only Clear done (removes completed items) and Clear all (empties the queue) buttons with tooltips.
+- Fixed combo-box popups (including Source language) being clipped off-screen by clamping their height and flipping them above the control when there is not enough room below.
+
 ## 0.4.19 - 2026-06-06
 
 - Added a first-run missing-model prompt that offers to download the checksum-verified Base model or open model downloads in Settings.

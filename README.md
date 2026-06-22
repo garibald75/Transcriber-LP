@@ -1,12 +1,12 @@
 # Transcriber-LP
 
 [![CI](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml/badge.svg)](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.4.19-blue)
+![Version](https://img.shields.io/badge/version-0.5.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![AI Speech-to-Text](https://img.shields.io/badge/AI-speech--to--text-7c3aed)
 ![Local First](https://img.shields.io/badge/local--first-on--device%20inference-0f766e)
 
-Current version: `0.4.19`
+Current version: `0.5.0`
 
 An AI-powered, local-first macOS transcription app that turns audio and video into editable text using Whisper, an automatic speech recognition AI model. It runs on-device ML inference through `whisper.cpp`, with FFmpeg media processing and a native PySide6 desktop workflow.
 
@@ -14,7 +14,7 @@ An AI-powered, local-first macOS transcription app that turns audio and video in
 
 - AI speech-to-text pipeline based on Whisper automatic speech recognition, with local ML model execution and no hosted backend or user media upload.
 - Privacy-conscious AI pipeline: media extraction, transcription, model selection, and transcript review stay on the user's machine.
-- Native desktop UI with drag and drop, batch import, unified Settings dropdowns, language controls, output format selection, media preview, quick transcript editing, theme switching, progress, cancellation, and help dialogs.
+- Native desktop UI with drag and drop, a unified transcription queue, unified Settings dropdowns, language controls, output format selection, media preview, quick transcript editing, theme switching, progress, cancellation, and help dialogs.
 - Local model management with checksum-gated downloads from the Settings dialog.
 - Automated Python syntax checks and unit tests through GitHub Actions.
 - macOS packaging flow with target-specific third-party binary, model, and license provenance.
@@ -32,9 +32,12 @@ The repository intentionally does not commit runtime binaries, model weights, vi
 
 ## Features
 
-- drag & drop media input
+- drag & drop media input (single or multiple files at once)
 - visible `Browse file...` button for media selection
-- batch import queue for sequential transcription of multiple media files
+- unified queue: every loaded file (drag & drop, `Browse`, or `Add files`) joins one queue and stays there after transcribing
+- per-file status glyphs in the queue — `○` queued, `▶` running, `✓` done, `✗` failed — so completed files keep a checkmark instead of disappearing
+- queue progress shown as `X / Y` with a per-file status line, plus `Clear done` and `Clear all` queue controls
+- `Transcribe queue` processes every not-yet-done file sequentially and skips files already completed
 - output formats: `txt`, `srt`, `vtt`
 - optional timestamped TXT output with CSV timing sidecar export
 - source language selection or auto-detect
@@ -42,7 +45,7 @@ The repository intentionally does not commit runtime binaries, model weights, vi
 - `Current Model` selector with a first-run missing-model prompt and model downloads in Settings
 - media preview player for reviewing the original source while correcting a transcript
 - quick transcript editor with overwrite confirmation before saving corrected `txt`, `srt`, and `vtt` files
-- batch status logging and output retrieval for completed queue items
+- queue status logging and output retrieval for completed queue items
 - stop/cancel for running jobs
 - light/dark theme switch from `View > Theme`
 - runtime help manual and open-source notice dialog
