@@ -2,6 +2,10 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.7.1 - 2026-06-24
+
+- Logged a closing line for the automatic engine/model update checks ("up to date" or "update available …") so the log no longer appears stuck on "Checking…".
+
 ## 0.7.0 - 2026-06-23
 
 - Added checksum-verified model updates: the app reads a maintainer-controlled `models-manifest.json` (kept in sync with HuggingFace by CI), checks at startup and on demand whether an installed model has a newer published checksum, asks for consent, then re-downloads and verifies it. Downloads are now verified against SHA-256 when the manifest provides it, and the verified checksum is recorded so update checks are cheap (no re-hashing of multi-GB files).
