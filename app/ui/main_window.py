@@ -600,12 +600,12 @@ class MainWindow(QMainWindow):
         left_layout.setContentsMargins(0, 0, 14, 0)
         left_layout.setSpacing(6)
 
-        self.browse_btn = QPushButton("Browse or Drop files here")
+        self.browse_btn = QPushButton("Add or Drop files here")
         self.browse_btn.setObjectName("browseButton")
         self.browse_btn.setProperty("role", "secondary")
         self.browse_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton))
         self.browse_btn.clicked.connect(self.browse_file)
-        self.browse_btn.setToolTip("Open a file selector, or drag and drop one or more media files anywhere on this panel.")
+        self.browse_btn.setToolTip("Add one or more media files to the queue: pick them, or drag and drop them anywhere on this panel.")
         left_layout.addWidget(self.browse_btn)
 
         self.file_label = QLabel("No file selected")
@@ -646,13 +646,6 @@ class MainWindow(QMainWindow):
 
         batch_row_one = QHBoxLayout()
         batch_row_one.setSpacing(8)
-        self.add_batch_btn = QPushButton("Add files")
-        self.add_batch_btn.setProperty("role", "secondary")
-        self.add_batch_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton))
-        self.add_batch_btn.clicked.connect(self.add_batch_files)
-        self.add_batch_btn.setToolTip("Add one or more audio or video files to the queue.")
-        batch_row_one.addWidget(self.add_batch_btn)
-
         self.remove_batch_btn = QPushButton("Remove")
         self.remove_batch_btn.setProperty("role", "secondary")
         self.remove_batch_btn.clicked.connect(self.remove_selected_batch_item)
@@ -953,8 +946,8 @@ class MainWindow(QMainWindow):
     def enqueue_paths(self, paths) -> list[Path]:
         """Add one or more media files to the queue and select the first new one.
 
-        Used by drag-and-drop, Browse and Add files so every loaded file lives in
-        a single queue and stays there with a status glyph.
+        Used by drag-and-drop and the "Add or Drop files here" picker so every
+        loaded file lives in a single queue and stays there with a status glyph.
         """
         known_paths = {str(item["path"]) for item in self.batch_items}
         added: list[Path] = []
@@ -992,19 +985,9 @@ class MainWindow(QMainWindow):
         self.sync_action_controls()
 
     def browse_file(self) -> None:
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Pick media file",
-            str(Path.home()),
-            "Media files (*.mp4 *.mov *.mkv *.avi *.mp3 *.wav *.m4a *.aac *.flac);;All files (*.*)",
-        )
-        if file_path:
-            self.enqueue_paths([Path(file_path)])
-
-    def add_batch_files(self) -> None:
         file_paths, _ = QFileDialog.getOpenFileNames(
             self,
-            "Add media files",
+            "Pick media files",
             str(Path.home()),
             "Media files (*.mp4 *.mov *.mkv *.avi *.mp3 *.wav *.m4a *.aac *.flac);;All files (*.*)",
         )
@@ -1162,7 +1145,6 @@ class MainWindow(QMainWindow):
         self.source_language_combo.setEnabled(not is_busy)
         self.target_language_combo.setEnabled(not is_busy)
         self.save_timestamps_checkbox.setEnabled(not is_busy)
-        self.add_batch_btn.setEnabled(not is_busy)
         self.remove_batch_btn.setEnabled(has_selection and not is_busy)
         self.clear_done_btn.setEnabled(has_done and not is_busy)
         self.clear_batch_btn.setEnabled(has_items and not is_busy)
@@ -1185,7 +1167,7 @@ class MainWindow(QMainWindow):
             if self.batch_items:
                 QMessageBox.information(self, "Nothing to do", "Every file in the queue is already transcribed.")
             else:
-                QMessageBox.warning(self, "Missing files", "Add files to the queue first.")
+                QMessageBox.warning(self, "Missing files", "Add or drop files into the queue first.")
             return
 
         model_key = self.current_model_key()
@@ -1652,18 +1634,22 @@ class MainWindow(QMainWindow):
         self.sync_action_controls()
 
     def _choose_output_dir(self, caption: str) -> str:
-        # Use Qt's own directory dialog instead of the macOS native one: in the
-        # packaged build the native chooser greys out folders so no destination
-        # can be selected. The non-native dialog selects folders reliably.
-        dialog = QFileDialog(self, caption, str(Path.home()))
-        dialog.setFileMode(QFileDialog.FileMode.Directory)
-        dialog.setOption(QFileDialog.Option.ShowDirsOnly, True)
-        dialog.setOption(QFileDialog.Option.DontUseNativeDialog, True)
-        if dialog.exec():
-            selected = dialog.selectedFiles()
-            if selected:
-                return selected[0]
-        return ""
+        # Use the native macOS panel: it conforms to the system look, and it is
+        # the only chooser that lists cloud / File-Provider folders (e.g. kDrive,
+        # OneDrive) — Qt's own dialog cannot enumerate those. Pass empty options
+        # (i.e. NOT ShowDirsOnly): on recent macOS, ShowDirsOnly greys out folders
+        # so nothing can be selected. Without it, files show greyed and folders
+        # stay selectable. The last folder is remembered between runs.
+        start_dir = str(self.settings.value("output/last_dir", "") or Path.home())
+        output_dir = QFileDialog.getExistingDirectory(
+            self,
+            caption,
+            start_dir,
+            QFileDialog.Option(0),
+        )
+        if output_dir:
+            self.settings.setValue("output/last_dir", output_dir)
+        return output_dir
 
     def open_outputs(self) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(outputs_dir())))
@@ -1851,7 +1837,7 @@ class MainWindow(QMainWindow):
     def show_help(self) -> None:
         manual = (
             "Transcriber-LP Manual:\n\n"
-            "1) Aggiungi uno o piu file audio/video con Browse, Add files o trascinandoli nella finestra: ogni file entra nella Queue. I file trascinati insieme vengono aggiunti dal piu vecchio al piu nuovo per data.\n"
+            "1) Aggiungi uno o piu file audio/video con 'Add or Drop files here' o trascinandoli nella finestra: ogni file entra nella Queue. I file trascinati insieme vengono aggiunti dal piu vecchio al piu nuovo per data.\n"
             "2) Scegli il formato di uscita: txt, srt o vtt.\n"
             "3) Controlla Current Model. Se non c'e un modello, l'app propone il download o apre Settings.\n"
             "4) Opzionalmente imposta la lingua sorgente o lascia Auto-detect per la rilevazione automatica.\n"
