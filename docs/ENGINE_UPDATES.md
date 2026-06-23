@@ -91,6 +91,29 @@ architecture, and compares the version against the installed/bundled one.
   run may fail; you will see a red run under Actions and no new release is
   created.
 
+## Model updates (same idea, applied to models)
+
+Models follow the same shelf/customer pattern, but with a twist: a model file
+doesn't get a "version" &mdash; a new model is a new file. The app therefore
+tracks **checksums**, not versions.
+
+- [`models-manifest.json`](../models-manifest.json) at the repo root is the
+  catalog: each model's `filename`, `label`, `size_label`, and `sha256`.
+- The app reads it at runtime (raw GitHub URL). Every model download is verified
+  against the manifest's `sha256`, and the verified checksum is recorded under
+  `~/Library/Application Support/Transcriber-LP/models/checksums.json`.
+- A model "update" means: an installed model's recorded checksum no longer
+  matches the manifest's (upstream re-published that file). The check compares
+  the recorded checksum against the manifest, so it is cheap &mdash; it never
+  re-hashes the multi-gigabyte model files. When one is found, the app asks for
+  consent and re-downloads + verifies it.
+- [`.github/workflows/models-manifest.yml`](../.github/workflows/models-manifest.yml)
+  refreshes the manifest from the HuggingFace API (LFS `sha256` only, no
+  downloads) and commits it back when a checksum changes.
+
+The built-in catalog in `app/core/model_manager.py` (with SHA-1 pins) remains
+the offline fallback when the manifest can't be fetched.
+
 ## Maintainer tasks
 
 - **Keep the bundled baseline in sync.** `BUNDLED_ENGINE_VERSION` in

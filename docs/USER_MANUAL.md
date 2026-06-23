@@ -1,6 +1,6 @@
 # Transcriber-LP User Manual
 
-Current version: `0.6.0`
+Current version: `0.7.0`
 
 Versioning starts at `0.1.0` for the first tracked public-ready baseline. The source of truth is `app/version.py`.
 
@@ -128,7 +128,9 @@ Use `Settings > Model downloads...` to download supported `whisper.cpp` models i
 
 The main panel shows only `Current Model`. If no model is installed, the app prompts you to download the Base model or open Settings to choose another model. The selector also shows `click here to download a model`; clicking it opens Settings. Downloads are saved outside the app bundle and accepted only after checksum verification.
 
-Only models with a checksum in `app/core/model_manager.py` are enabled for in-app download. Models without a checksum must be installed manually after their provenance is verified.
+Only models with a checksum are enabled for in-app download. Models without a checksum must be installed manually after their provenance is verified.
+
+**Model updates.** Shortly after launch (and via `Settings > Check for model updates...`), the app checks a checksummed model catalog for a newer published version of any model you have installed. If one is found, it asks for your consent and then re-downloads and verifies the model. Every model download is verified by checksum before it is used. See [ENGINE_UPDATES.md](ENGINE_UPDATES.md) for how the catalog is kept up to date.
 
 ## Whisper Engine Updates
 

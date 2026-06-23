@@ -52,6 +52,8 @@ from app.ui.workers import (
     DownloadModelWorker,
     EngineUpdateCheckWorker,
     EngineUpdateWorker,
+    ModelUpdateCheckWorker,
+    ModelUpdateWorker,
     TranscribeWorker,
 )
 from app.version import APP_VERSION
@@ -529,6 +531,8 @@ class MainWindow(QMainWindow):
         self.auto_model_prompted = False
         self.engine_update_prompted = False
         self._engine_check_worker = None
+        self.model_update_prompted = False
+        self._model_check_worker = None
         self.download_buttons: list[QPushButton] = []
         self.model_settings_dialog: QDialog | None = None
         self.model_settings_list: QListWidget | None = None
@@ -542,9 +546,10 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self.refresh_models()
         QTimer.singleShot(0, self.ensure_default_model_available)
-        # Check for a newer Whisper engine shortly after startup, in the
-        # background, so it never blocks launch.
+        # Check for a newer Whisper engine and model updates shortly after
+        # startup, in the background, so they never block launch.
         QTimer.singleShot(2500, self.check_engine_updates)
+        QTimer.singleShot(4000, self.check_model_updates)
 
     def _build_ui(self) -> None:
         menu_bar = self.menuBar()
@@ -572,6 +577,9 @@ class MainWindow(QMainWindow):
         engine_update_action = QAction("Check for Whisper engine updates...", self)
         engine_update_action.triggered.connect(lambda: self.check_engine_updates(manual=True))
         settings_menu.addAction(engine_update_action)
+        model_update_action = QAction("Check for model updates...", self)
+        model_update_action.triggered.connect(lambda: self.check_model_updates(manual=True))
+        settings_menu.addAction(model_update_action)
 
         help_menu = menu_bar.addMenu("Help")
         help_action = QAction("Show manual", self)
@@ -1967,12 +1975,113 @@ class MainWindow(QMainWindow):
         QMessageBox.critical(self, "Engine update failed", message)
         self.sync_action_controls()
 
+    def check_model_updates(self, manual: bool = False) -> None:
+        if self.current_worker is not None:
+            if manual:
+                QMessageBox.information(
+                    self,
+                    "Please wait",
+                    "Another operation is in progress. Try again when it finishes.",
+                )
+            return
+        if not manual and self.model_update_prompted:
+            return
+        self.append_log("Checking for model updates...")
+        worker = ModelUpdateCheckWorker(self.model_manager)
+        worker.signals.log.connect(self.append_log)
+        worker.signals.finished.connect(lambda updates: self.on_model_check_finished(updates, manual))
+        self._model_check_worker = worker
+        self.thread_pool.start(worker)
+
+    def on_model_check_finished(self, updates, manual: bool) -> None:
+        self.model_update_prompted = True
+        self._model_check_worker = None
+        if not updates:
+            if manual:
+                QMessageBox.information(self, "Models", "Your installed models are up to date.")
+            return
+        if self.current_worker is not None:
+            self.append_log("Model update available, but skipped because the app is busy.")
+            return
+        self.prompt_model_update(updates)
+
+    def prompt_model_update(self, updates: list) -> None:
+        names = ", ".join(m.label for m in updates)
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Question)
+        box.setWindowTitle("Model update")
+        box.setText(f"An updated version is available for: {names}.")
+        box.setInformativeText(
+            "Updating re-downloads the model file(s) and verifies them by checksum. "
+            "This can be a large download.\n\nUpdate now?"
+        )
+        update_btn = box.addButton("Update now", QMessageBox.ButtonRole.AcceptRole)
+        box.addButton("Later", QMessageBox.ButtonRole.RejectRole)
+        box.setDefaultButton(update_btn)
+        box.exec()
+        if box.clickedButton() is update_btn:
+            self.start_model_update(updates)
+        else:
+            self.append_log("Model update postponed by user.")
+
+    def start_model_update(self, updates: list) -> None:
+        worker = ModelUpdateWorker(self.model_manager, updates)
+        worker.signals.log.connect(self.append_log)
+        worker.signals.progress.connect(self.on_model_update_progress)
+        worker.signals.finished.connect(self.on_model_update_finished)
+        worker.signals.error.connect(self.on_model_update_error)
+        self.current_worker = worker
+        self.current_mode = "modeldl"
+        self.progress.setRange(0, 0)
+        self.progress.setFormat("")
+        self.progress_label.setText("Updating model(s)...")
+        self.append_log("Updating model(s)...")
+        self.sync_action_controls()
+        self.thread_pool.start(worker)
+
+    def on_model_update_progress(self, done: int, total: int) -> None:
+        if total > 0:
+            self.progress.setRange(0, total)
+            self.progress.setValue(done)
+            self.progress.setFormat("%p%")
+            self.progress_label.setText(
+                f"Updating model: {_format_bytes(done)} / {_format_bytes(total)}"
+            )
+        else:
+            self.progress.setRange(0, 0)
+
+    def on_model_update_finished(self, keys) -> None:
+        self.current_worker = None
+        self.current_mode = None
+        self.progress.setRange(0, 1)
+        self.progress.setValue(1)
+        self.progress.setFormat("Done")
+        self.progress_label.setText("Model(s) updated")
+        self.append_log(f"Model(s) updated: {', '.join(keys)}")
+        self.refresh_models()
+        QMessageBox.information(self, "Models updated", "The selected model(s) were updated.")
+        self.sync_action_controls()
+
+    def on_model_update_error(self, message: str) -> None:
+        self.current_worker = None
+        self.current_mode = None
+        self.progress.setRange(0, 1)
+        self.progress.setValue(0)
+        self.progress.setFormat("%p%")
+        self.progress_label.setText("Model update failed")
+        self.append_log(f"MODEL UPDATE ERROR: {message}")
+        QMessageBox.critical(self, "Model update failed", message)
+        self.sync_action_controls()
+
     def show_security_help(self) -> None:
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Information)
         box.setWindowTitle("macOS security & permissions")
         box.setText("Allowing Transcriber-LP and its Whisper engine on macOS")
         box.setInformativeText(
+            "Usually you don't need to change anything — the app and the "
+            "downloaded engine run without prompts. These steps are only for the "
+            "rare cases below.\n\n"
             "If macOS blocks the app or the downloaded Whisper engine "
             '("cannot be opened because the developer cannot be verified"), '
             "allow it once:\n\n"

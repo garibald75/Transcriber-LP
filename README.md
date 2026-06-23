@@ -1,12 +1,12 @@
 # Transcriber-LP
 
 [![CI](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml/badge.svg)](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.6.0-blue)
+![Version](https://img.shields.io/badge/version-0.7.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![AI Speech-to-Text](https://img.shields.io/badge/AI-speech--to--text-7c3aed)
 ![Local First](https://img.shields.io/badge/local--first-on--device%20inference-0f766e)
 
-Current version: `0.6.0`
+Current version: `0.7.0`
 
 An AI-powered, local-first macOS transcription app that turns audio and video into editable text using Whisper, an automatic speech recognition AI model. It runs on-device ML inference through `whisper.cpp`, with FFmpeg media processing and a native PySide6 desktop workflow.
 
@@ -45,6 +45,7 @@ The repository intentionally does not commit runtime binaries, model weights, vi
 - translate to English or keep the source language
 - `Current Model` selector with a first-run missing-model prompt and model downloads in Settings
 - autonomous Whisper engine updates: checks for a newer `whisper.cpp` engine, asks for consent, then downloads and verifies it; bundled engine stays as an offline fallback
+- checksum-verified model updates: checks whether an installed model has a newer published checksum and re-downloads it with your consent (catalog kept in sync with HuggingFace by CI)
 - `macOS security & permissions` help dialog that opens System Settings to allow the app/engine and grant file access
 - media preview player for reviewing the original source while correcting a transcript
 - quick transcript editor with overwrite confirmation before saving corrected `txt`, `srt`, and `vtt` files
