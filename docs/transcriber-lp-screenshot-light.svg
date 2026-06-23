@@ -29,7 +29,7 @@
   <text class="ui" x="275" y="139" text-anchor="middle" font-size="18" font-weight="700" fill="#0d5d67">Drop audio or video</text>
 
   <rect x="20" y="184" width="510" height="34" rx="8" fill="#ffffff" stroke="#0aa37f"/>
-  <text class="ui" x="275" y="206" text-anchor="middle" font-size="13" font-weight="700" fill="#203140">Browse file...</text>
+  <text class="ui" x="275" y="206" text-anchor="middle" font-size="13" font-weight="700" fill="#203140">Browse or Drop files here</text>
 
   <rect x="20" y="230" width="510" height="32" rx="8" fill="#ffffff" stroke="#d7e1ea"/>
   <text class="ui" x="34" y="251" font-size="13" fill="#526678">~/Movies/interview-light-session.mov</text>

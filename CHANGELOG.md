@@ -2,6 +2,13 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.5.1 - 2026-06-23
+
+- Ordered multi-file drag-and-drop by file date (oldest to newest) so dropped files enter the queue chronologically.
+- Turned the queue into a sortable table with File, Date, and Status columns; click a header to sort the queue (disabled while a transcription is running).
+- Made the entire left panel a drop target instead of a small drop bar, with a highlighted overlay that fades in while files are dragged over it; renamed the file button to "Browse or Drop files here".
+- Fixed the output-folder picker greying out all folders in the packaged macOS app by using Qt's own directory dialog instead of the native one.
+
 ## 0.5.0 - 2026-06-22
 
 - Unified single-file and batch transcription into one Queue: every file loaded via drag-and-drop, Browse, or Add files now joins the queue and stays there after transcribing.

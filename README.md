@@ -32,9 +32,10 @@ The repository intentionally does not commit runtime binaries, model weights, vi
 
 ## Features
 
-- drag & drop media input (single or multiple files at once)
-- visible `Browse file...` button for media selection
+- drag & drop media input over the whole left panel (single or multiple files at once, added oldest-to-newest by file date), with a highlighted overlay while dragging
+- visible `Browse or Drop files here` button for media selection
 - unified queue: every loaded file (drag & drop, `Browse`, or `Add files`) joins one queue and stays there after transcribing
+- sortable queue table with `File`, `Date`, and `Status` columns — click a column header to sort the queue
 - per-file status glyphs in the queue — `○` queued, `▶` running, `✓` done, `✗` failed — so completed files keep a checkmark instead of disappearing
 - queue progress shown as `X / Y` with a per-file status line, plus `Clear done` and `Clear all` queue controls
 - `Transcribe queue` processes every not-yet-done file sequentially and skips files already completed
