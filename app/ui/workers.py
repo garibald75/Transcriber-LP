@@ -4,6 +4,7 @@ import traceback
 
 from PySide6.QtCore import QObject, QRunnable, Signal
 
+from app.core import engine_manager
 from app.core.transcriber import Transcriber, TranscriptionOptions
 
 
@@ -107,6 +108,36 @@ class BatchTranscribeWorker(BaseWorker):
 
         self.signals.log.emit("=== BATCH TRANSCRIBE END ===")
         self.signals.batch_finished.emit(results)
+
+
+class EngineUpdateCheckWorker(BaseWorker):
+    """Check GitHub for a newer Whisper engine. Emits the release info or None."""
+
+    def execute(self) -> None:
+        try:
+            info = engine_manager.update_available()
+        except Exception as exc:
+            # A failed update check must never disrupt the app; just log it.
+            self.signals.log.emit(f"Engine update check skipped: {exc}")
+            info = None
+        self.signals.finished.emit(info)
+
+
+class EngineUpdateWorker(BaseWorker):
+    """Download and install a newer Whisper engine."""
+
+    def __init__(self, info: dict) -> None:
+        super().__init__()
+        self.info = info
+
+    def execute(self) -> None:
+        version = self.info.get("version")
+        self.signals.log.emit(f"=== ENGINE UPDATE START === {version}")
+        installed = engine_manager.download_and_install(
+            self.info, progress_cb=self.signals.progress.emit
+        )
+        self.signals.log.emit(f"=== ENGINE UPDATE END OK === {installed}")
+        self.signals.finished.emit(installed)
 
 
 class DownloadModelWorker(BaseWorker):

@@ -1,6 +1,6 @@
 # Transcriber-LP User Manual
 
-Current version: `0.5.1`
+Current version: `0.6.0`
 
 Versioning starts at `0.1.0` for the first tracked public-ready baseline. The source of truth is `app/version.py`.
 
@@ -129,6 +129,21 @@ Use `Settings > Model downloads...` to download supported `whisper.cpp` models i
 The main panel shows only `Current Model`. If no model is installed, the app prompts you to download the Base model or open Settings to choose another model. The selector also shows `click here to download a model`; clicking it opens Settings. Downloads are saved outside the app bundle and accepted only after checksum verification.
 
 Only models with a checksum in `app/core/model_manager.py` are enabled for in-app download. Models without a checksum must be installed manually after their provenance is verified.
+
+## Whisper Engine Updates
+
+The transcription engine (`whisper.cpp`) ships inside the app as an offline fallback, but the app keeps it up to date on its own:
+
+1. Shortly after launch (and any time via `Settings > Check for Whisper engine updates...`), the app checks whether a newer engine has been published.
+2. If one is available, it tells you a new engine can be installed and that this requires downloading components, and asks for your consent.
+3. If you choose **Update now**, the app **autonomously** downloads the engine, verifies its checksum, and installs it into `~/Library/Application Support/Transcriber-LP/engine`. The next transcription uses the new engine.
+4. If you choose **Later**, nothing changes and you keep the engine you already have.
+
+Your models and transcripts are never touched by an engine update, and the bundled engine remains available, so the app still works offline if you never update.
+
+### macOS security & permissions
+
+Because the app and the downloaded engine are not signed by an identified Apple developer, macOS may block them the first time. Open `Help > macOS security & permissions...` for step-by-step instructions and a button that jumps to **System Settings > Privacy & Security**, where you can click **Open Anyway** to allow the app/engine and, if needed, grant access to files in protected or cloud folders.
 
 ## Outputs
 
