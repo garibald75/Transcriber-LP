@@ -103,6 +103,7 @@ Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_P
 - `app/assets/` UI and icon assets (including a new SVG app icon)
 - `tests/` unit tests and import checks
 - `docs/USER_MANUAL.md` end-user manual
+- `docs/ENGINE_UPDATES.md` how the autonomous Whisper engine updates work (app + CI)
 - `docs/THIRD_PARTY_NOTICE.md` open-source owners, licenses, and redistribution policy
 - `docs/RELEASE_COMPLIANCE.md` release policy for binaries, models, and license texts
 - `docs/DISTRIBUTION_CHECKLIST.md` release readiness checklist
