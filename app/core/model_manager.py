@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
 import requests
 
 from .paths import bundled_models_dir, models_dir
+
+# Maintainer-controlled catalog of models + checksums, kept up to date by CI from
+# HuggingFace. The app reads it at runtime to learn about new/updated models and
+# verifies every download against its checksum. The built-in MODEL_DEFS below is
+# the offline fallback when the manifest can't be fetched.
+MODELS_MANIFEST_URL = (
+    "https://raw.githubusercontent.com/garibald75/Transcriber-LP/main/models-manifest.json"
+)
 
 
 @dataclass(frozen=True)
@@ -17,6 +26,7 @@ class ModelDefinition:
     size_label: str
     multilingual: bool
     sha1: str
+    sha256: str = ""
 
     @property
     def url(self) -> str:
@@ -67,6 +77,42 @@ MODEL_DEFS = {
 }
 
 DEFAULT_DOWNLOAD_MODEL_KEY = "base"
+
+
+def parse_manifest(data: dict) -> dict[str, ModelDefinition]:
+    """Turn a models-manifest.json payload into {key: ModelDefinition}.
+
+    Pure (no network) so it can be unit-tested. Entries without a checksum are
+    ignored, since downloads must be checksum-verified.
+    """
+    catalog: dict[str, ModelDefinition] = {}
+    for entry in (data or {}).get("models", []):
+        key = entry.get("key")
+        filename = entry.get("filename")
+        sha256 = str(entry.get("sha256") or "")
+        if not key or not filename or not sha256:
+            continue
+        catalog[key] = ModelDefinition(
+            key=key,
+            filename=filename,
+            label=entry.get("label") or key,
+            size_label=entry.get("size_label") or "",
+            multilingual=bool(entry.get("multilingual", True)),
+            sha1=str(entry.get("sha1") or ""),
+            sha256=sha256,
+        )
+    return catalog
+
+
+def fetch_remote_catalog(timeout: int = 15) -> dict[str, ModelDefinition]:
+    """Fetch the model manifest. Returns {} on any failure (never raises)."""
+    try:
+        resp = requests.get(MODELS_MANIFEST_URL, timeout=timeout)
+        if resp.status_code != 200:
+            return {}
+        return parse_manifest(resp.json())
+    except Exception:
+        return {}
 
 
 class ModelManager:
@@ -143,12 +189,13 @@ class ModelManager:
 
         raise FileNotFoundError(f"Model not found: {model_key}")
 
-    def download_model(self, model_key: str, progress_cb=None) -> Path:
-        if model_key not in MODEL_DEFS:
+    def download_model(self, model_key: str, progress_cb=None, definition: ModelDefinition | None = None) -> Path:
+        # ``definition`` lets the update flow pass a fresh manifest entry (with an
+        # updated checksum); normal downloads fall back to the built-in catalog.
+        model = definition or MODEL_DEFS.get(model_key)
+        if model is None:
             raise ValueError(f"Unsupported model: {model_key}")
-
-        model = MODEL_DEFS[model_key]
-        if not model.sha1:
+        if not (model.sha256 or model.sha1):
             raise ValueError(f"Model download is not enabled without a checksum: {model.filename}")
 
         target = self.user_models_dir / model.filename
@@ -167,17 +214,71 @@ class ModelManager:
                     if progress_cb:
                         progress_cb(downloaded, total)
 
-        self._verify_download(temp, model)
+        verified = self._verify_download(temp, model)
         temp.replace(target)
+        self._record_checksum(model.filename, verified)
         return target
 
     @staticmethod
-    def _verify_download(temp: Path, model: ModelDefinition) -> None:
-        if model.sha1:
-            sha1 = _sha1_file(temp)
-            if sha1 != model.sha1:
+    def _verify_download(temp: Path, model: ModelDefinition) -> dict:
+        """Verify the download against the strongest available checksum.
+
+        Returns the verified checksums so they can be recorded for later
+        update checks. Raises on mismatch.
+        """
+        verified: dict = {}
+        if model.sha256:
+            actual = _sha256_file(temp)
+            if actual.lower() != model.sha256.lower():
                 temp.unlink(missing_ok=True)
                 raise ValueError(f"Checksum mismatch for {model.filename}")
+            verified["sha256"] = actual.lower()
+        elif model.sha1:
+            actual = _sha1_file(temp)
+            if actual != model.sha1:
+                temp.unlink(missing_ok=True)
+                raise ValueError(f"Checksum mismatch for {model.filename}")
+            verified["sha1"] = actual
+        return verified
+
+    def _checksums_marker(self) -> Path:
+        return self.user_models_dir / "checksums.json"
+
+    def _read_checksums(self) -> dict:
+        try:
+            return json.loads(self._checksums_marker().read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+
+    def _record_checksum(self, filename: str, checksums: dict) -> None:
+        if not checksums:
+            return
+        data = self._read_checksums()
+        data[filename] = checksums
+        try:
+            self._checksums_marker().write_text(json.dumps(data), encoding="utf-8")
+        except OSError:
+            pass
+
+    def check_model_updates(self, timeout: int = 15) -> list[ModelDefinition]:
+        """Return manifest models whose installed copy is superseded by a newer
+        checksum. Cheap: compares the checksum recorded at download time against
+        the manifest, without re-hashing the (multi-GB) model files.
+        """
+        remote = fetch_remote_catalog(timeout)
+        if not remote:
+            return []
+        recorded = self._read_checksums()
+        updates: list[ModelDefinition] = []
+        for model in remote.values():
+            if not model.sha256:
+                continue
+            if not (self.user_models_dir / model.filename).exists():
+                continue
+            have = (recorded.get(model.filename) or {}).get("sha256", "").lower()
+            if have and have != model.sha256.lower():
+                updates.append(model)
+        return updates
 
     def installed_model_labels(self) -> list[str]:
         return [
@@ -188,6 +289,14 @@ class ModelManager:
 
 def _sha1_file(path: Path) -> str:
     h = hashlib.sha1()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
     with open(path, "rb") as fh:
         for chunk in iter(lambda: fh.read(1024 * 1024), b""):
             h.update(chunk)

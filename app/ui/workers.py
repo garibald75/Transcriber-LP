@@ -140,6 +140,40 @@ class EngineUpdateWorker(BaseWorker):
         self.signals.finished.emit(installed)
 
 
+class ModelUpdateCheckWorker(BaseWorker):
+    """Check whether any installed model has a newer checksummed version."""
+
+    def __init__(self, manager) -> None:
+        super().__init__()
+        self.manager = manager
+
+    def execute(self) -> None:
+        try:
+            updates = self.manager.check_model_updates()
+        except Exception as exc:
+            self.signals.log.emit(f"Model update check skipped: {exc}")
+            updates = []
+        self.signals.finished.emit(updates)
+
+
+class ModelUpdateWorker(BaseWorker):
+    """Re-download the given models (fresh manifest definitions) with verification."""
+
+    def __init__(self, manager, models: list) -> None:
+        super().__init__()
+        self.manager = manager
+        self.models = models
+
+    def execute(self) -> None:
+        for model in self.models:
+            self.signals.log.emit(f"=== MODEL UPDATE START === {model.label} ({model.filename})")
+            self.manager.download_model(
+                model.key, progress_cb=self.signals.progress.emit, definition=model
+            )
+            self.signals.log.emit(f"=== MODEL UPDATE END OK === {model.label}")
+        self.signals.finished.emit([m.key for m in self.models])
+
+
 class DownloadModelWorker(BaseWorker):
     def __init__(self, model_key: str, manager) -> None:
         super().__init__()

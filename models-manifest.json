@@ -1,0 +1,46 @@
+{
+  "source": "https://huggingface.co/ggerganov/whisper.cpp",
+  "note": "Model catalog with sha256 checksums. Maintained by .github/workflows/models-manifest.yml from the HuggingFace API. The app reads this at runtime to offer model updates and verifies every download against the checksum here.",
+  "models": [
+    {
+      "key": "base",
+      "filename": "ggml-base.bin",
+      "label": "Base",
+      "size_label": "142 MiB",
+      "multilingual": true,
+      "sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe"
+    },
+    {
+      "key": "small",
+      "filename": "ggml-small.bin",
+      "label": "Small",
+      "size_label": "466 MiB",
+      "multilingual": true,
+      "sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b"
+    },
+    {
+      "key": "medium",
+      "filename": "ggml-medium.bin",
+      "label": "Medium",
+      "size_label": "1.5 GiB",
+      "multilingual": true,
+      "sha256": "6c14d5adee5f86394037b4e4e8b59f1673b6cee10e3cf0b11bbdbee79c156208"
+    },
+    {
+      "key": "large-v3",
+      "filename": "ggml-large-v3.bin",
+      "label": "Large v3",
+      "size_label": "2.9 GiB",
+      "multilingual": true,
+      "sha256": "64d182b440b98d5203c4f9bd541544d84c605196c4f7b845dfa11fb23594d1e2"
+    },
+    {
+      "key": "large-v3-turbo-q5_0",
+      "filename": "ggml-large-v3-turbo-q5_0.bin",
+      "label": "Large v3 Turbo Q5",
+      "size_label": "547 MiB",
+      "multilingual": true,
+      "sha256": "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2"
+    }
+  ]
+}

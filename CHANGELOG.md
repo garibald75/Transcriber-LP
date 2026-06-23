@@ -2,6 +2,12 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.7.0 - 2026-06-23
+
+- Added checksum-verified model updates: the app reads a maintainer-controlled `models-manifest.json` (kept in sync with HuggingFace by CI), checks at startup and on demand whether an installed model has a newer published checksum, asks for consent, then re-downloads and verifies it. Downloads are now verified against SHA-256 when the manifest provides it, and the verified checksum is recorded so update checks are cheap (no re-hashing of multi-GB files).
+- Added a `models-manifest.yml` CI workflow that refreshes model checksums from the HuggingFace API (no model downloads).
+- Clarified the "macOS security & permissions" dialog to state that normally nothing needs changing.
+
 ## 0.6.0 - 2026-06-23
 
 - Added autonomous Whisper engine updates: the app checks GitHub at startup (and on demand via Settings) for a newer prebuilt `whisper.cpp` engine, asks the user for consent, then downloads, checksum-verifies, and installs it into Application Support. The bundled engine stays as an offline fallback, so nothing breaks without an update.
