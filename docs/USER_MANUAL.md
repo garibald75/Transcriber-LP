@@ -20,7 +20,7 @@ For a packaged build, open `dist/Transcriber-LP.app`.
 
 ## Transcribe a File
 
-1. Drag one or more audio/video files into the drop area, or use `Browse file...` or `Add files`. Every file joins the **Queue** and stays there.
+1. Drag one or more audio/video files anywhere onto the left panel, or use `Browse or Drop files here` or `Add files`. While you drag files over the panel, a highlighted overlay fades in to show the drop target. Every file joins the **Queue** and stays there. Files dropped together are added oldest-to-newest by file date.
 2. Choose the output format: `txt`, `srt`, or `vtt`.
 3. Select a model from the model list.
 4. Leave source language on `Auto-detect`, or choose a known language.
@@ -33,9 +33,11 @@ Use `Stop` to cancel a running transcription.
 
 ## The Queue
 
-Single-file and batch transcription share one **Queue**. Drag and drop, `Browse file...`, and `Add files` all add files to it, and files **stay in the queue after transcribing** instead of disappearing.
+Single-file and batch transcription share one **Queue**. Drag and drop (anywhere on the left panel), `Browse or Drop files here`, and `Add files` all add files to it, and files **stay in the queue after transcribing** instead of disappearing.
 
-Each row shows a status glyph next to the file name:
+When several files are dragged in at once, they are added in chronological order by file date (oldest first).
+
+The queue is a table with three columns: **File**, **Date**, and **Status**. Click any column header to sort the whole queue by that column (click again to reverse the order). Sorting is disabled while a transcription is running. Each row's **File** cell shows a status glyph next to the file name:
 
 - `○` queued
 - `▶` transcribing
@@ -111,7 +113,7 @@ Transcriber-LP starts with the light theme by default.
 
 Use `View > Theme > Light` or `View > Theme > Dark` to switch the interface while the app is running. The selected theme is saved in user settings and restored on the next launch.
 
-Dropdown menus highlight the option under the mouse. The `Browse file...` control is intentionally styled as a primary file-picking button so it is distinguishable from status text and input fields.
+Dropdown menus highlight the option under the mouse. The `Browse or Drop files here` control is intentionally styled as a primary file-picking button so it is distinguishable from status text and input fields, and the whole left panel doubles as a drop target.
 
 The log panel includes an `Auto-scroll` checkbox in the log header. When enabled, new log output keeps the panel pinned to the latest line. When disabled, the current scroll position is preserved so older output can be read while work continues. The checkbox uses a visible `x` marker when selected.
 

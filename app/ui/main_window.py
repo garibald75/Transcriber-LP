@@ -1,6 +1,7 @@
 from __future__ import annotations
 import time
 
+from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QItemSelectionModel, QObject, QSettings, Qt, QThreadPool, QTimer
@@ -17,6 +18,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QListWidget,
     QListWidgetItem,
@@ -28,6 +30,8 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSlider,
     QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
     QStyle,
@@ -41,7 +45,7 @@ from app.core.model_manager import DEFAULT_DOWNLOAD_MODEL_KEY, MODEL_DEFS, Model
 from app.core.notices import THIRD_PARTY_NOTICE_TEXT
 from app.core.paths import outputs_dir
 from app.core.transcriber import TranscriptionOptions
-from app.ui.widgets import DropLabel
+from app.ui.widgets import DropArea, file_date
 from app.ui.workers import BatchTranscribeWorker, DownloadModelWorker, TranscribeWorker
 from app.version import APP_VERSION
 
@@ -507,6 +511,8 @@ class MainWindow(QMainWindow):
         self.current_mode: str | None = None
         self.current_single_index: int | None = None
         self.batch_index_map: list[int] = []
+        # Active queue sort: (column index, descending) or None for insertion order.
+        self.queue_sort: tuple[int, bool] | None = None
         self.batch_total = 0
         self.batch_completed = 0
         self.current_transcript_path: Path | None = None
@@ -586,24 +592,20 @@ class MainWindow(QMainWindow):
         root.addWidget(splitter, stretch=1)
         self.setCentralWidget(central)
 
-        left = QWidget()
+        # The whole left panel is the drop target — drag files anywhere over it.
+        left = DropArea(self.enqueue_paths)
         left.setMinimumWidth(360)
         left.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(0, 0, 14, 0)
         left_layout.setSpacing(6)
 
-        self.drop_zone = DropLabel(self.enqueue_paths)
-        self.drop_zone.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
-        self.drop_zone.setToolTip("Drag and drop one or more media files here, or click Browse to add them.")
-        left_layout.addWidget(self.drop_zone, stretch=1)
-
-        self.browse_btn = QPushButton("Browse file…")
+        self.browse_btn = QPushButton("Browse or Drop files here")
         self.browse_btn.setObjectName("browseButton")
         self.browse_btn.setProperty("role", "secondary")
         self.browse_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton))
         self.browse_btn.clicked.connect(self.browse_file)
-        self.browse_btn.setToolTip("Open a file selector to choose the audio or video file to transcribe.")
+        self.browse_btn.setToolTip("Open a file selector, or drag and drop one or more media files anywhere on this panel.")
         left_layout.addWidget(self.browse_btn)
 
         self.file_label = QLabel("No file selected")
@@ -617,12 +619,29 @@ class MainWindow(QMainWindow):
         batch_layout.setContentsMargins(16, 16, 16, 12)
         batch_layout.setSpacing(6)
 
-        self.batch_list = QListWidget()
+        self.batch_list = QTableWidget(0, 3)
+        self.batch_list.setObjectName("queueTable")
+        self.batch_list.setHorizontalHeaderLabels(["File", "Date", "Status"])
         self.batch_list.setMinimumHeight(64)
         self.batch_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.batch_list.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.batch_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.batch_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.batch_list.setShowGrid(False)
+        self.batch_list.setWordWrap(False)
+        self.batch_list.verticalHeader().setVisible(False)
+        header = self.batch_list.horizontalHeader()
+        header.setHighlightSections(False)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionsClickable(True)
+        header.sectionClicked.connect(self.on_queue_header_clicked)
         self.batch_list.itemSelectionChanged.connect(self.on_batch_selection_changed)
         self.batch_list.itemDoubleClicked.connect(lambda _item: self.retrieve_batch_output())
-        self.batch_list.setToolTip("Loaded media files. Completed files stay here with a ✓ checkmark.")
+        self.batch_list.setToolTip(
+            "Loaded media files. Click a column header to sort. Completed files stay here with a ✓ checkmark."
+        )
         batch_layout.addWidget(self.batch_list, stretch=1)
 
         batch_row_one = QHBoxLayout()
@@ -963,7 +982,7 @@ class MainWindow(QMainWindow):
         if not (0 <= row < len(self.batch_items)):
             return
         self.batch_list.blockSignals(True)
-        self.batch_list.setCurrentRow(row)
+        self.batch_list.setCurrentCell(row, 0)
         self.batch_list.blockSignals(False)
         path = Path(self.batch_items[row]["path"])
         self.selected_file = path
@@ -1015,27 +1034,92 @@ class MainWindow(QMainWindow):
     def refresh_batch_list(self) -> None:
         current_row = self.batch_list.currentRow()
         colors = THEME_PALETTES[self.theme_name]
+        text_color = QColor(colors["list_text"])
         self.batch_list.blockSignals(True)
-        self.batch_list.clear()
-        for item in self.batch_items:
+        self.batch_list.setRowCount(len(self.batch_items))
+        for row, item in enumerate(self.batch_items):
             path = Path(item["path"])
             status = str(item.get("status") or "queued")
             glyph, color_key = QUEUE_STATUS_DISPLAY.get(status, QUEUE_STATUS_DISPLAY["queued"])
+            row_color = QColor(colors.get(color_key, colors["list_text"]))
             output = item.get("output")
             suffix = f"  →  {Path(output).name}" if output else ""
-            list_item = QListWidgetItem(f"{glyph}  {path.name}{suffix}")
-            list_item.setForeground(QColor(colors.get(color_key, colors["list_text"])))
             status_label = QUEUE_STATUS_LABEL.get(status, status)
             tooltip = f"{status_label} — {path}"
             if item.get("error"):
                 tooltip += f"\n{item['error']}"
-            list_item.setToolTip(tooltip)
-            self.batch_list.addItem(list_item)
+
+            file_cell = self._queue_cell(f"{glyph}  {path.name}{suffix}", row_color, tooltip)
+            date_cell = self._queue_cell(self._queue_date_text(item), text_color, tooltip)
+            status_cell = self._queue_cell(status_label, row_color, tooltip)
+            self.batch_list.setItem(row, 0, file_cell)
+            self.batch_list.setItem(row, 1, date_cell)
+            self.batch_list.setItem(row, 2, status_cell)
 
         if self.batch_items:
-            self.batch_list.setCurrentRow(max(0, min(current_row, len(self.batch_items) - 1)))
+            self.batch_list.setCurrentCell(
+                max(0, min(current_row, len(self.batch_items) - 1)), 0
+            )
         self.batch_list.blockSignals(False)
         self.sync_action_controls()
+
+    def _queue_cell(self, text: str, color: QColor, tooltip: str) -> QTableWidgetItem:
+        cell = QTableWidgetItem(text)
+        cell.setForeground(color)
+        cell.setToolTip(tooltip)
+        return cell
+
+    def _queue_timestamp(self, item: dict) -> float:
+        """Cached file date used for both display and date-column sorting."""
+        ts = item.get("date_ts")
+        if ts is None:
+            ts = file_date(Path(item["path"]))
+            item["date_ts"] = ts
+        return ts
+
+    def _queue_date_text(self, item: dict) -> str:
+        ts = self._queue_timestamp(item)
+        if not ts:
+            return "—"
+        return datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M")
+
+    def on_queue_header_clicked(self, column: int) -> None:
+        # Reorder the underlying queue so the row<->batch_items index mapping the
+        # rest of the code relies on stays intact. Disabled mid-run to avoid
+        # invalidating the in-flight batch index map.
+        if self.current_worker is not None or not self.batch_items:
+            return
+
+        descending = False
+        if self.queue_sort and self.queue_sort[0] == column:
+            descending = not self.queue_sort[1]
+        self.queue_sort = (column, descending)
+
+        selected_path = None
+        row = self.batch_list.currentRow()
+        if 0 <= row < len(self.batch_items):
+            selected_path = str(self.batch_items[row]["path"])
+
+        if column == 1:
+            key = self._queue_timestamp
+        elif column == 2:
+            order = list(QUEUE_STATUS_LABEL.keys())
+            key = lambda it: order.index(str(it.get("status") or "queued")) if str(it.get("status") or "queued") in order else len(order)
+        else:
+            key = lambda it: Path(it["path"]).name.lower()
+        self.batch_items.sort(key=key, reverse=descending)
+
+        self.batch_list.horizontalHeader().setSortIndicator(
+            column, Qt.SortOrder.DescendingOrder if descending else Qt.SortOrder.AscendingOrder
+        )
+        self.batch_list.horizontalHeader().setSortIndicatorShown(True)
+
+        self.refresh_batch_list()
+        if selected_path is not None:
+            for new_row, item in enumerate(self.batch_items):
+                if str(item["path"]) == selected_path:
+                    self._select_queue_row(new_row)
+                    break
 
     def on_batch_selection_changed(self) -> None:
         row = self.batch_list.currentRow()
@@ -1115,11 +1199,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Model error", str(exc))
             return
 
-        output_dir = QFileDialog.getExistingDirectory(
-            self,
-            "Select batch output folder",
-            str(Path.home()),
-        )
+        output_dir = self._choose_output_dir("Select batch output folder")
         if not output_dir:
             return
 
@@ -1489,11 +1569,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Model error", str(exc))
             return
 
-        output_dir = QFileDialog.getExistingDirectory(
-            self,
-            "Select output folder",
-            str(Path.home())
-        )
+        output_dir = self._choose_output_dir("Select output folder")
         if not output_dir:
             return
 
@@ -1574,6 +1650,20 @@ class MainWindow(QMainWindow):
         self.current_worker = None
         self.current_mode = None
         self.sync_action_controls()
+
+    def _choose_output_dir(self, caption: str) -> str:
+        # Use Qt's own directory dialog instead of the macOS native one: in the
+        # packaged build the native chooser greys out folders so no destination
+        # can be selected. The non-native dialog selects folders reliably.
+        dialog = QFileDialog(self, caption, str(Path.home()))
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
+        dialog.setOption(QFileDialog.Option.ShowDirsOnly, True)
+        dialog.setOption(QFileDialog.Option.DontUseNativeDialog, True)
+        if dialog.exec():
+            selected = dialog.selectedFiles()
+            if selected:
+                return selected[0]
+        return ""
 
     def open_outputs(self) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(outputs_dir())))
@@ -1761,7 +1851,7 @@ class MainWindow(QMainWindow):
     def show_help(self) -> None:
         manual = (
             "Transcriber-LP Manual:\n\n"
-            "1) Aggiungi uno o piu file audio/video con Browse, Add files o trascinandoli nella finestra: ogni file entra nella Queue.\n"
+            "1) Aggiungi uno o piu file audio/video con Browse, Add files o trascinandoli nella finestra: ogni file entra nella Queue. I file trascinati insieme vengono aggiunti dal piu vecchio al piu nuovo per data.\n"
             "2) Scegli il formato di uscita: txt, srt o vtt.\n"
             "3) Controlla Current Model. Se non c'e un modello, l'app propone il download o apre Settings.\n"
             "4) Opzionalmente imposta la lingua sorgente o lascia Auto-detect per la rilevazione automatica.\n"
@@ -1769,6 +1859,7 @@ class MainWindow(QMainWindow):
             "6) Abilita Timestamped output se vuoi timecode nel TXT e un CSV con i timestamp.\n"
             "7) Clicca Transcribe per il file selezionato; usa Stop per annullare la trascrizione in corso.\n\n"
             "Queue:\n"
+            "- La coda e una tabella con le colonne File, Date e Status: clicca un'intestazione per ordinare la coda (di nuovo per invertire). L'ordinamento e disattivato durante una trascrizione.\n"
             "- I file restano nella coda: ▶ in corso, ✓ completato, ✗ fallito. Non spariscono dopo la trascrizione.\n"
             "- Usa Transcribe queue per trascrivere in sequenza tutti i file non ancora completati nello stesso output folder.\n"
             "- La barra mostra l'avanzamento (X/Y) e quali file sono stati fatti.\n"
@@ -1968,26 +2059,16 @@ class MainWindow(QMainWindow):
                         f"color: {c['section_title']};\nfont-size: 15px;\nfont-weight: 700;",
                     ),
                     block(
-                        "QLabel#dropZone",
+                        "QLabel#dropOverlay",
                         "\n".join(
                             [
                                 f"color: {c['drop_text']};",
-                                f"background: {c['drop_bg']};",
-                                f"border: 2px dashed {c['drop_border']};",
-                                "border-radius: 14px;",
+                                f"background: {_hex_to_rgba(c['drop_hover_bg'], 0.93)};",
+                                f"border: 3px dashed {c['drop_hover_border']};",
+                                "border-radius: 16px;",
                                 "padding: 18px;",
-                                "font-size: 18px;",
-                                "font-weight: 700;",
-                            ]
-                        ),
-                    ),
-                    block(
-                        "QLabel#dropZone:hover",
-                        "\n".join(
-                            [
-                                f"background: {c['drop_hover_bg']};",
-                                f"border-color: {c['drop_hover_border']};",
-                                f"color: {c['title']};",
+                                "font-size: 22px;",
+                                "font-weight: 800;",
                             ]
                         ),
                     ),
@@ -2244,7 +2325,7 @@ class MainWindow(QMainWindow):
                         ),
                     ),
                     block(
-                        "QListWidget,\nQPlainTextEdit",
+                        "QListWidget,\nQTableWidget,\nQPlainTextEdit",
                         "\n".join(
                             [
                                 f"color: {c['list_text']};",
@@ -2256,6 +2337,39 @@ class MainWindow(QMainWindow):
                                 f"selection-color: {c['selection_text']};",
                             ]
                         ),
+                    ),
+                    block(
+                        "QTableWidget#queueTable",
+                        f"gridline-color: transparent;\nbackground: {c['list_bg']};",
+                    ),
+                    block(
+                        "QTableWidget::item",
+                        "padding: 4px 6px;\nborder: none;",
+                    ),
+                    block(
+                        "QTableWidget::item:selected",
+                        f"background: {c['selection_bg']};\ncolor: {c['selection_text']};",
+                    ),
+                    block(
+                        "QHeaderView::section",
+                        "\n".join(
+                            [
+                                f"color: {c['field_label']};",
+                                f"background: {c['group_title_bg']};",
+                                "border: none;",
+                                f"border-bottom: 1px solid {c['list_border']};",
+                                "padding: 5px 8px;",
+                                "font-weight: 700;",
+                            ]
+                        ),
+                    ),
+                    block(
+                        "QHeaderView::section:hover",
+                        f"color: {c['list_hover_text']};\nbackground: {c['list_hover_bg']};",
+                    ),
+                    block(
+                        "QTableCornerButton::section",
+                        f"background: {c['group_title_bg']};\nborder: none;",
                     ),
                     block(
                         "QPlainTextEdit#logPanel",
@@ -2376,6 +2490,17 @@ class MainWindow(QMainWindow):
                 ]
             )
         )
+
+
+def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+    value = hex_color.lstrip("#")
+    if len(value) == 3:
+        value = "".join(ch * 2 for ch in value)
+    try:
+        r, g, b = (int(value[i : i + 2], 16) for i in (0, 2, 4))
+    except (ValueError, IndexError):
+        return hex_color
+    return f"rgba({r}, {g}, {b}, {alpha})"
 
 
 def _format_bytes(value):
