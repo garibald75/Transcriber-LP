@@ -110,8 +110,9 @@ Before publishing a packaged app, complete `docs/FFMPEG_BUILD.md`, `docs/MODEL_P
 - `docs/DISTRIBUTION_CHECKLIST.md` release readiness checklist
 - `docs/TECHNICAL_REVIEW.md` implementation notes for technical review
 - `scripts/` packaging and helper scripts
+- `models-manifest.json` model catalog with checksums, read by the app and kept in sync with HuggingFace by CI
 - `third_party/macos/` local packaging inputs; only `.gitkeep` placeholders are tracked
-- `.github/workflows/` CI pipeline
+- `.github/workflows/` CI (`ci.yml`), engine release builder (`engine-release.yml`), and model manifest refresher (`models-manifest.yml`)
 
 ## Quick start
 
