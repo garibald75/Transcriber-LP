@@ -1,0 +1,67 @@
+name: Refresh model manifest
+
+# Keeps models-manifest.json in sync with the checksums published on
+# HuggingFace (ggerganov/whisper.cpp), using the HF API only (no model
+# downloads). If a model file's checksum changes, the manifest is updated and
+# the app will offer the corresponding update to users.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 6 * * 1" # Mondays 06:30 UTC
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refresh checksums from HuggingFace
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request
+
+          tree_url = "https://huggingface.co/api/models/ggerganov/whisper.cpp/tree/main?recursive=true"
+          tree = json.load(urllib.request.urlopen(tree_url, timeout=30))
+          oids = {
+              e["path"]: (e.get("lfs") or {})
+              for e in tree
+              if isinstance(e, dict) and e.get("path")
+          }
+
+          with open("models-manifest.json") as fh:
+              manifest = json.load(fh)
+
+          changed = False
+          for model in manifest.get("models", []):
+              info = oids.get(model["filename"]) or {}
+              oid = info.get("oid")
+              if oid and oid != model.get("sha256"):
+                  model["sha256"] = oid
+                  changed = True
+                  print(f"Updated {model['filename']} -> {oid}")
+
+          if changed:
+              with open("models-manifest.json", "w") as fh:
+                  json.dump(manifest, fh, indent=2)
+                  fh.write("\n")
+              print("manifest changed")
+          else:
+              print("manifest already up to date")
+          PY
+
+      - name: Commit updated manifest
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- models-manifest.json; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add models-manifest.json
+          git commit -m "chore: refresh model checksums from HuggingFace"
+          git push
