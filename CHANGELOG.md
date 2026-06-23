@@ -6,8 +6,9 @@ Transcriber-LP follows semantic versioning. The first tracked baseline starts at
 
 - Ordered multi-file drag-and-drop by file date (oldest to newest) so dropped files enter the queue chronologically.
 - Turned the queue into a sortable table with File, Date, and Status columns; click a header to sort the queue (disabled while a transcription is running).
-- Made the entire left panel a drop target instead of a small drop bar, with a highlighted overlay that fades in while files are dragged over it; renamed the file button to "Browse or Drop files here".
-- Fixed the output-folder picker greying out all folders in the packaged macOS app by using Qt's own directory dialog instead of the native one.
+- Made the entire left panel a drop target instead of a small drop bar, with a highlighted overlay that fades in while files are dragged over it.
+- Renamed the file button to "Add or Drop files here", let it add several files at once, and removed the now-redundant "Add files" queue button.
+- Fixed the output-folder picker: it now uses the native macOS panel without `ShowDirsOnly` (which greyed out folders on recent macOS), so folders — including cloud / File-Provider folders such as kDrive and OneDrive — are listed and selectable, and the last chosen output folder is remembered between runs.
 
 ## 0.5.0 - 2026-06-22
 
