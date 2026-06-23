@@ -1882,6 +1882,9 @@ class MainWindow(QMainWindow):
         self.engine_update_prompted = True
         self._engine_check_worker = None
         if not info:
+            self.append_log(
+                f"Whisper engine is up to date ({engine_manager.installed_engine_version()})."
+            )
             if manual:
                 QMessageBox.information(
                     self,
@@ -1889,6 +1892,7 @@ class MainWindow(QMainWindow):
                     f"You already have the latest engine ({engine_manager.installed_engine_version()}).",
                 )
             return
+        self.append_log(f"Whisper engine update available: {info.get('version')}")
         if self.current_worker is not None:
             self.append_log("Engine update available, but skipped because the app is busy.")
             return
@@ -1997,9 +2001,11 @@ class MainWindow(QMainWindow):
         self.model_update_prompted = True
         self._model_check_worker = None
         if not updates:
+            self.append_log("Models are up to date.")
             if manual:
                 QMessageBox.information(self, "Models", "Your installed models are up to date.")
             return
+        self.append_log("Model update available: " + ", ".join(m.label for m in updates))
         if self.current_worker is not None:
             self.append_log("Model update available, but skipped because the app is busy.")
             return
