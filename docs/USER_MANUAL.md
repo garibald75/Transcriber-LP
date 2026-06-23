@@ -141,6 +141,8 @@ The transcription engine (`whisper.cpp`) ships inside the app as an offline fall
 
 Your models and transcripts are never touched by an engine update, and the bundled engine remains available, so the app still works offline if you never update.
 
+For how engine releases are produced and kept up to date (the CI workflow and its limits), see [ENGINE_UPDATES.md](ENGINE_UPDATES.md).
+
 ### macOS security & permissions
 
 Because the app and the downloaded engine are not signed by an identified Apple developer, macOS may block them the first time. Open `Help > macOS security & permissions...` for step-by-step instructions and a button that jumps to **System Settings > Privacy & Security**, where you can click **Open Anyway** to allow the app/engine and, if needed, grant access to files in protected or cloud folders.
