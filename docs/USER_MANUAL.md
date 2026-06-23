@@ -16,7 +16,7 @@ For a packaged build, open `dist/Transcriber-LP.app`.
 
 ## Interface Preview
 
-![Transcriber-LP light UI](transcriber-lp-screenshot-light.svg)
+![Transcriber-LP light UI](transcriber-lp-screenshot-light.png)
 
 ## Transcribe a File
 

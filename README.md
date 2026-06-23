@@ -64,7 +64,7 @@ The source of truth is `app/version.py`. macOS bundle metadata is read from that
 
 ## Screenshot
 
-![Transcriber-LP night UI](docs/transcriber-lp-screenshot-night.svg)
+![Transcriber-LP night UI](docs/transcriber-lp-screenshot-night.png)
 
 ## Appearance
 
