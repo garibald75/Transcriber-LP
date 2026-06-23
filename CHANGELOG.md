@@ -2,6 +2,12 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.6.0 - 2026-06-23
+
+- Added autonomous Whisper engine updates: the app checks GitHub at startup (and on demand via Settings) for a newer prebuilt `whisper.cpp` engine, asks the user for consent, then downloads, checksum-verifies, and installs it into Application Support. The bundled engine stays as an offline fallback, so nothing breaks without an update.
+- Added a "macOS security & permissions" help dialog (Help menu, and offered after an engine update) with step-by-step instructions and a button that opens System Settings → Privacy & Security, for allowing the app/engine and granting file access.
+- Pinned `whisper.cpp` to a tag in `scripts/build_whisper_cli.sh` for reproducible builds, and added a CI workflow that builds and publishes `engine-<tag>` releases when a new upstream version ships.
+
 ## 0.5.1 - 2026-06-23
 
 - Ordered multi-file drag-and-drop by file date (oldest to newest) so dropped files enter the queue chronologically.

@@ -2,9 +2,13 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Pin the whisper.cpp version for reproducible builds. Keep in sync with
+# BUNDLED_ENGINE_VERSION in app/core/engine_manager.py when re-vendoring.
+WHISPER_CPP_TAG="${WHISPER_CPP_TAG:-v1.7.5}"
 WORKDIR="${TMPDIR:-/tmp}/whispercpp-build"
 rm -rf "$WORKDIR"
-git clone https://github.com/ggml-org/whisper.cpp.git "$WORKDIR"
+echo "Building whisper.cpp $WHISPER_CPP_TAG"
+git clone --depth 1 --branch "$WHISPER_CPP_TAG" https://github.com/ggml-org/whisper.cpp.git "$WORKDIR"
 cd "$WORKDIR"
 cmake -B build
 cmake --build build --config Release -j

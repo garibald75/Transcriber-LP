@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .command_builder import build_ffmpeg_command, build_whisper_command
+from .engine_manager import whisper_cli_path
 from .paths import bundled_bin, outputs_dir, temp_dir
 
 
@@ -28,7 +29,8 @@ class TranscriptionOptions:
 class Transcriber:
     def __init__(self) -> None:
         self.ffmpeg_path = self._ensure_executable(bundled_bin("ffmpeg"))
-        self.whisper_path = self._ensure_executable(bundled_bin("whisper-cli"))
+        # Prefer a downloaded/updated engine if installed, else the bundled one.
+        self.whisper_path = self._ensure_executable(whisper_cli_path())
         self._current_process: subprocess.Popen | None = None
         self._cancel_requested = False
 
@@ -74,7 +76,7 @@ class Transcriber:
             executable=self.whisper_path,
         )
 
-        env = self._build_environment()
+        env = self._build_environment(self.whisper_path.parent)
         self._run("WHISPER", whisper_cmd, log_cb, env=env)
 
         output_file = self._output_file(out_base, options.output_format)
@@ -103,9 +105,16 @@ class Transcriber:
         return wav_path, out_dir, out_base
 
     @staticmethod
-    def _build_environment() -> dict[str, str]:
+    def _build_environment(lib_dir: Path | None = None) -> dict[str, str]:
         env = os.environ.copy()
         env["WHISPER_NO_METAL"] = "1"
+        # Ensure a downloaded engine finds its sibling dylibs even if its rpath
+        # differs from the bundled layout.
+        if lib_dir is not None:
+            existing = env.get("DYLD_FALLBACK_LIBRARY_PATH", "")
+            env["DYLD_FALLBACK_LIBRARY_PATH"] = (
+                f"{lib_dir}:{existing}" if existing else str(lib_dir)
+            )
         return env
 
     @staticmethod

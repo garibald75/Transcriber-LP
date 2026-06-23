@@ -46,7 +46,14 @@ from app.core.notices import THIRD_PARTY_NOTICE_TEXT
 from app.core.paths import outputs_dir
 from app.core.transcriber import TranscriptionOptions
 from app.ui.widgets import DropArea, file_date
-from app.ui.workers import BatchTranscribeWorker, DownloadModelWorker, TranscribeWorker
+from app.core import engine_manager
+from app.ui.workers import (
+    BatchTranscribeWorker,
+    DownloadModelWorker,
+    EngineUpdateCheckWorker,
+    EngineUpdateWorker,
+    TranscribeWorker,
+)
 from app.version import APP_VERSION
 
 
@@ -520,6 +527,8 @@ class MainWindow(QMainWindow):
         self.download_started_at = 0.0
         self.active_download_model_key: str | None = None
         self.auto_model_prompted = False
+        self.engine_update_prompted = False
+        self._engine_check_worker = None
         self.download_buttons: list[QPushButton] = []
         self.model_settings_dialog: QDialog | None = None
         self.model_settings_list: QListWidget | None = None
@@ -533,6 +542,9 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self.refresh_models()
         QTimer.singleShot(0, self.ensure_default_model_available)
+        # Check for a newer Whisper engine shortly after startup, in the
+        # background, so it never blocks launch.
+        QTimer.singleShot(2500, self.check_engine_updates)
 
     def _build_ui(self) -> None:
         menu_bar = self.menuBar()
@@ -557,11 +569,17 @@ class MainWindow(QMainWindow):
         model_settings_action = QAction("Model downloads...", self)
         model_settings_action.triggered.connect(self.show_model_settings)
         settings_menu.addAction(model_settings_action)
+        engine_update_action = QAction("Check for Whisper engine updates...", self)
+        engine_update_action.triggered.connect(lambda: self.check_engine_updates(manual=True))
+        settings_menu.addAction(engine_update_action)
 
         help_menu = menu_bar.addMenu("Help")
         help_action = QAction("Show manual", self)
         help_action.triggered.connect(self.show_help)
         help_menu.addAction(help_action)
+        security_action = QAction("macOS security & permissions...", self)
+        security_action.triggered.connect(self.show_security_help)
+        help_menu.addAction(security_action)
         licenses_action = QAction("Open-source licenses", self)
         licenses_action.triggered.connect(self.show_open_source_notices)
         help_menu.addAction(licenses_action)
@@ -1833,6 +1851,151 @@ class MainWindow(QMainWindow):
         self.current_worker = None
         self.current_mode = None
         self.sync_action_controls()
+
+    def check_engine_updates(self, manual: bool = False) -> None:
+        if self.current_worker is not None:
+            if manual:
+                QMessageBox.information(
+                    self,
+                    "Please wait",
+                    "Another operation is in progress. Try again when it finishes.",
+                )
+            return
+        if not manual and self.engine_update_prompted:
+            return
+        self.append_log("Checking for Whisper engine updates...")
+        worker = EngineUpdateCheckWorker()
+        worker.signals.log.connect(self.append_log)
+        worker.signals.finished.connect(lambda info: self.on_engine_check_finished(info, manual))
+        self._engine_check_worker = worker
+        self.thread_pool.start(worker)
+
+    def on_engine_check_finished(self, info, manual: bool) -> None:
+        self.engine_update_prompted = True
+        self._engine_check_worker = None
+        if not info:
+            if manual:
+                QMessageBox.information(
+                    self,
+                    "Whisper engine",
+                    f"You already have the latest engine ({engine_manager.installed_engine_version()}).",
+                )
+            return
+        if self.current_worker is not None:
+            self.append_log("Engine update available, but skipped because the app is busy.")
+            return
+        self.prompt_engine_update(info)
+
+    def prompt_engine_update(self, info: dict) -> None:
+        version = info.get("version", "?")
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Question)
+        box.setWindowTitle("Whisper engine update")
+        box.setText(f"A new Whisper engine ({version}) is available.")
+        box.setInformativeText(
+            "Updating will download the required components and replace the engine "
+            "used for transcription. Your models and transcripts are not affected.\n\n"
+            "Update now?"
+        )
+        update_btn = box.addButton("Update now", QMessageBox.ButtonRole.AcceptRole)
+        box.addButton("Later", QMessageBox.ButtonRole.RejectRole)
+        box.setDefaultButton(update_btn)
+        box.exec()
+        if box.clickedButton() is update_btn:
+            self.start_engine_update(info)
+        else:
+            self.append_log("Engine update postponed by user.")
+
+    def start_engine_update(self, info: dict) -> None:
+        version = info.get("version", "?")
+        worker = EngineUpdateWorker(info)
+        worker.signals.log.connect(self.append_log)
+        worker.signals.progress.connect(self.on_engine_update_progress)
+        worker.signals.finished.connect(self.on_engine_update_finished)
+        worker.signals.error.connect(self.on_engine_update_error)
+        self.current_worker = worker
+        self.current_mode = "engine"
+        self.progress.setRange(0, 0)
+        self.progress.setFormat("")
+        self.progress_label.setText(f"Downloading Whisper engine {version}...")
+        self.append_log(f"Downloading Whisper engine {version}...")
+        self.sync_action_controls()
+        self.thread_pool.start(worker)
+
+    def on_engine_update_progress(self, done: int, total: int) -> None:
+        if total > 0:
+            self.progress.setRange(0, total)
+            self.progress.setValue(done)
+            self.progress.setFormat("%p%")
+            self.progress_label.setText(
+                f"Downloading Whisper engine: {_format_bytes(done)} / {_format_bytes(total)}"
+            )
+        else:
+            self.progress.setRange(0, 0)
+
+    def on_engine_update_finished(self, version) -> None:
+        self.current_worker = None
+        self.current_mode = None
+        self.progress.setRange(0, 1)
+        self.progress.setValue(1)
+        self.progress.setFormat("Done")
+        self.progress_label.setText(f"Whisper engine updated to {version}")
+        self.append_log(f"Whisper engine updated to {version}")
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle("Engine updated")
+        box.setText(f"Whisper engine updated to {version}.")
+        box.setInformativeText(
+            "It will be used for the next transcription.\n\n"
+            "If macOS blocks the new engine, see the security steps."
+        )
+        security_btn = box.addButton("macOS security & permissions", QMessageBox.ButtonRole.ActionRole)
+        box.addButton(QMessageBox.StandardButton.Ok)
+        box.exec()
+        if box.clickedButton() is security_btn:
+            self.show_security_help()
+        self.sync_action_controls()
+
+    def on_engine_update_error(self, message: str) -> None:
+        self.current_worker = None
+        self.current_mode = None
+        self.progress.setRange(0, 1)
+        self.progress.setValue(0)
+        self.progress.setFormat("%p%")
+        self.progress_label.setText("Engine update failed")
+        self.append_log(f"ENGINE UPDATE ERROR: {message}")
+        QMessageBox.critical(self, "Engine update failed", message)
+        self.sync_action_controls()
+
+    def show_security_help(self) -> None:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle("macOS security & permissions")
+        box.setText("Allowing Transcriber-LP and its Whisper engine on macOS")
+        box.setInformativeText(
+            "If macOS blocks the app or the downloaded Whisper engine "
+            '("cannot be opened because the developer cannot be verified"), '
+            "allow it once:\n\n"
+            "1. Open the Apple menu  > System Settings.\n"
+            "2. Go to Privacy & Security.\n"
+            "3. Scroll down to the Security section.\n"
+            "4. Next to the message about Transcriber-LP (or \"whisper-cli\") being "
+            "blocked, click \"Open Anyway\".\n"
+            "5. Confirm with \"Open\" and your password or Touch ID if asked.\n\n"
+            "To read or write files in protected locations (Desktop, Documents, "
+            "Downloads, iCloud or kDrive):\n"
+            "1. System Settings > Privacy & Security > Files and Folders "
+            "(or Full Disk Access).\n"
+            "2. Enable access for Transcriber-LP.\n\n"
+            "Use the button below to jump straight to Privacy & Security."
+        )
+        open_btn = box.addButton("Open Privacy & Security", QMessageBox.ButtonRole.ActionRole)
+        box.addButton(QMessageBox.StandardButton.Close)
+        box.exec()
+        if box.clickedButton() is open_btn:
+            QDesktopServices.openUrl(
+                QUrl("x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension")
+            )
 
     def show_help(self) -> None:
         manual = (
