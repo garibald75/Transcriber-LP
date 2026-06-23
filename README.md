@@ -1,12 +1,12 @@
 # Transcriber-LP
 
 [![CI](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml/badge.svg)](https://github.com/garibald75/Transcriber-LP/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.5.0-blue)
+![Version](https://img.shields.io/badge/version-0.5.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![AI Speech-to-Text](https://img.shields.io/badge/AI-speech--to--text-7c3aed)
 ![Local First](https://img.shields.io/badge/local--first-on--device%20inference-0f766e)
 
-Current version: `0.5.0`
+Current version: `0.5.1`
 
 An AI-powered, local-first macOS transcription app that turns audio and video into editable text using Whisper, an automatic speech recognition AI model. It runs on-device ML inference through `whisper.cpp`, with FFmpeg media processing and a native PySide6 desktop workflow.
 
