@@ -1,0 +1,109 @@
+name: Build Whisper engine release
+
+# Builds a prebuilt whisper.cpp engine (whisper-cli + dylibs) for macOS arm64
+# and publishes it as an "engine-<tag>" GitHub release. The app checks these
+# releases at runtime and offers the user an autonomous engine update.
+#
+# Runs weekly to track new upstream whisper.cpp releases, and on demand via the
+# Actions tab (optionally pinning a specific whisper.cpp tag).
+
+on:
+  workflow_dispatch:
+    inputs:
+      whisper_tag:
+        description: "whisper.cpp tag to build (blank = upstream latest)"
+        required: false
+        default: ""
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+
+permissions:
+  contents: write
+
+jobs:
+  build-engine:
+    runs-on: macos-14
+    steps:
+      - name: Resolve target whisper.cpp tag
+        id: tag
+        run: |
+          set -euo pipefail
+          INPUT="${{ github.event.inputs.whisper_tag }}"
+          if [ -n "$INPUT" ]; then
+            TAG="$INPUT"
+          else
+            TAG=$(curl -fsSL https://api.github.com/repos/ggml-org/whisper.cpp/releases/latest \
+              | python3 -c "import sys,json;print(json.load(sys.stdin)['tag_name'])")
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Target whisper.cpp tag: $TAG"
+
+      - name: Skip if engine release already exists
+        id: exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -z "${{ github.event.inputs.whisper_tag }}" ] && \
+             gh release view "engine-${{ steps.tag.outputs.tag }}" \
+               --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "engine-${{ steps.tag.outputs.tag }} already published; skipping."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build whisper.cpp
+        if: steps.exists.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.tag.outputs.tag }}"
+          git clone --depth 1 --branch "$TAG" https://github.com/ggml-org/whisper.cpp.git src
+          cd src
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release -j
+
+      - name: Assemble engine bundle
+        if: steps.exists.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p engine
+          cp src/build/bin/whisper-cli engine/
+          # Collect every produced dylib alongside the CLI so @executable_path resolves them.
+          find src/build -name "*.dylib" -exec cp -P {} engine/ \;
+          install_name_tool -add_rpath "@executable_path" engine/whisper-cli || true
+          chmod +x engine/whisper-cli
+          tar -czf whisper-engine-macos-arm64.tar.gz -C engine .
+          SHA=$(shasum -a 256 whisper-engine-macos-arm64.tar.gz | awk '{print $1}')
+          echo "$SHA  whisper-engine-macos-arm64.tar.gz" > whisper-engine-macos-arm64.tar.gz.sha256
+          TAG="${{ steps.tag.outputs.tag }}"
+          cat > manifest.json <<EOF
+          {
+            "engine_version": "$TAG",
+            "whisper_cpp_tag": "$TAG",
+            "assets": {
+              "arm64": { "name": "whisper-engine-macos-arm64.tar.gz", "sha256": "$SHA" }
+            }
+          }
+          EOF
+          echo "Built engine-$TAG (sha256 $SHA)"
+
+      - name: Publish engine release
+        if: steps.exists.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.tag.outputs.tag }}"
+          gh release create "engine-$TAG" \
+            whisper-engine-macos-arm64.tar.gz \
+            whisper-engine-macos-arm64.tar.gz.sha256 \
+            manifest.json \
+            --repo "${{ github.repository }}" \
+            --title "Whisper engine $TAG" \
+            --notes "Prebuilt whisper.cpp $TAG engine for Transcriber-LP (macOS arm64). Downloaded and installed at runtime by the app." \
+            || gh release upload "engine-$TAG" \
+                 whisper-engine-macos-arm64.tar.gz \
+                 whisper-engine-macos-arm64.tar.gz.sha256 \
+                 manifest.json \
+                 --repo "${{ github.repository }}" --clobber
