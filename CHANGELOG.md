@@ -2,6 +2,10 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.7.2 - 2026-06-24
+
+- Removed the standalone file-path card under the "Add or Drop files here" button and gave the recovered space to the Queue. The selected file's full path is still available via the row tooltip (hover) and a new right-click → "Informazioni file" context menu on the queue, which shows name, full path, status, date, size, and (when present) output name and error.
+
 ## 0.7.1 - 2026-06-24
 
 - Logged a closing line for the automatic engine/model update checks ("up to date" or "update available …") so the log no longer appears stuck on "Checking…".
