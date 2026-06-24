@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QPushButton,
     QPlainTextEdit,
@@ -634,11 +635,6 @@ class MainWindow(QMainWindow):
         self.browse_btn.setToolTip("Add one or more media files to the queue: pick them, or drag and drop them anywhere on this panel.")
         left_layout.addWidget(self.browse_btn)
 
-        self.file_label = QLabel("No file selected")
-        self.file_label.setObjectName("fileLabel")
-        self.file_label.setWordWrap(True)
-        left_layout.addWidget(self.file_label)
-
         batch_box = QGroupBox("Queue")
         batch_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         batch_layout = QVBoxLayout(batch_box)
@@ -665,6 +661,8 @@ class MainWindow(QMainWindow):
         header.sectionClicked.connect(self.on_queue_header_clicked)
         self.batch_list.itemSelectionChanged.connect(self.on_batch_selection_changed)
         self.batch_list.itemDoubleClicked.connect(lambda _item: self.retrieve_batch_output())
+        self.batch_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.batch_list.customContextMenuRequested.connect(self.show_queue_context_menu)
         self.batch_list.setToolTip(
             "Loaded media files. Click a column header to sort. Completed files stay here with a ✓ checkmark."
         )
@@ -1005,7 +1003,6 @@ class MainWindow(QMainWindow):
         self.batch_list.blockSignals(False)
         path = Path(self.batch_items[row]["path"])
         self.selected_file = path
-        self.file_label.setText(str(path))
         if path.exists():
             self.load_media(path)
         self.sync_action_controls()
@@ -1019,6 +1016,42 @@ class MainWindow(QMainWindow):
         )
         if file_paths:
             self.enqueue_paths([Path(p) for p in file_paths])
+
+    def show_queue_context_menu(self, pos) -> None:
+        row = self.batch_list.rowAt(pos.y())
+        if not (0 <= row < len(self.batch_items)):
+            return
+        self._select_queue_row(row)
+        menu = QMenu(self.batch_list)
+        info_action = menu.addAction("Informazioni file")
+        chosen = menu.exec(self.batch_list.viewport().mapToGlobal(pos))
+        if chosen is info_action:
+            self.show_file_info(row)
+
+    def show_file_info(self, row: int) -> None:
+        if not (0 <= row < len(self.batch_items)):
+            return
+        item = self.batch_items[row]
+        path = Path(item["path"])
+        status_label = QUEUE_STATUS_LABEL.get(str(item.get("status") or "queued"), "—")
+        lines = [
+            f"Nome: {path.name}",
+            f"Percorso: {path}",
+            f"Stato: {status_label}",
+        ]
+        ts = self._queue_timestamp(item)
+        if ts:
+            lines.append(f"Data: {datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M')}")
+        try:
+            size = path.stat().st_size
+            lines.append(f"Dimensione: {_format_bytes(size)}")
+        except OSError:
+            lines.append("Dimensione: file non trovato")
+        if item.get("output"):
+            lines.append(f"Output: {Path(item['output']).name}")
+        if item.get("error"):
+            lines.append(f"Errore: {item['error']}")
+        QMessageBox.information(self, "Informazioni file", "\n".join(lines))
 
     def remove_selected_batch_item(self) -> None:
         row = self.batch_list.currentRow()
@@ -1135,7 +1168,6 @@ class MainWindow(QMainWindow):
         if 0 <= row < len(self.batch_items):
             path = Path(self.batch_items[row]["path"])
             self.selected_file = path
-            self.file_label.setText(str(path))
             if path.exists():
                 self.load_media(path)
         self.sync_action_controls()
@@ -1332,7 +1364,6 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Missing output", f"Output file not found:\n{output_path}")
             return
         self.selected_file = Path(item["path"])
-        self.file_label.setText(str(item["path"]))
         self.load_media(Path(item["path"]))
         self.load_transcript(output_path)
         self.append_log(f"Retrieved batch output: {output_path}")
@@ -2307,7 +2338,7 @@ class MainWindow(QMainWindow):
                         ),
                     ),
                     block(
-                        "QLabel#fileLabel,\nQLabel#progressLabel,\nQLabel#modelDownloadStatus",
+                        "QLabel#progressLabel,\nQLabel#modelDownloadStatus",
                         "\n".join(
                             [
                                 f"color: {c['status_text']};",

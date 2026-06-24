@@ -54,6 +54,8 @@ Queue controls:
 - **Clear all** (trash icon, bottom-right) — empty the queue.
 - **Retrieve output** — select a completed item (or double-click it) to load its source media in the preview player and open the generated transcript in the editor.
 
+To see a file's full path and details, hover a row for a tooltip, or right-click it and choose **Informazioni file** for a dialog with the name, full path, status, date, size, and (when present) the output file name and any error.
+
 If multiple queued files share the same base filename, queue output names include a numeric suffix to avoid overwriting earlier files.
 
 ## Timestamp Export
