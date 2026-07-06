@@ -26,14 +26,15 @@ jobs:
     steps:
       - name: Resolve target whisper.cpp tag
         id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           INPUT="${{ github.event.inputs.whisper_tag }}"
           if [ -n "$INPUT" ]; then
             TAG="$INPUT"
           else
-            TAG=$(curl -fsSL https://api.github.com/repos/ggml-org/whisper.cpp/releases/latest \
-              | python3 -c "import sys,json;print(json.load(sys.stdin)['tag_name'])")
+            TAG=$(gh api repos/ggml-org/whisper.cpp/releases/latest --jq .tag_name)
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Target whisper.cpp tag: $TAG"
