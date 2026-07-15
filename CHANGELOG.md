@@ -2,6 +2,11 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.8.2 - 2026-07-15
+
+- Added an "Open output folder" button to the completion dialogs (single file and queue) that opens the folder containing the generated transcripts.
+- Styled all message dialogs (completion, confirmations, prompts, errors) with the app theme — themed background and text in both light and dark mode — and widened dialog buttons so longer labels such as "Open output folder" are no longer clipped.
+
 ## 0.8.1 - 2026-07-15
 
 - Fixed queue drag-and-drop removing the dragged row: the drop was accepted as a MoveAction, so Qt deleted the source row after the reorder had already been applied. The drop is now accepted as a copy and the reorder runs after the drag machinery unwinds, so rows are only ever repositioned.

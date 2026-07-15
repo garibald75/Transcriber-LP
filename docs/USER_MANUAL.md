@@ -29,6 +29,8 @@ For a packaged build, open `dist/Transcriber-LP.app`.
 7. Select a file in the queue and click `Transcribe selected` to transcribe only that file, or click `Transcribe queue` to process every not-yet-done file in sequence. (The button reads `Transcribe` while nothing is selected.)
 8. Choose the output folder when prompted.
 
+When a transcription (or the whole queue) finishes, the completion dialog offers **Open output folder** to jump straight to the folder containing the generated files.
+
 Use `Stop` to cancel a running transcription. Use `Reset` to start a new session: after confirmation it empties the queue, unloads the media preview, clears the transcript editor, and resets the progress bar. Output files already saved on disk are not affected.
 
 ## The Queue

@@ -577,6 +577,7 @@ class MainWindow(QMainWindow):
         self.queue_sort: tuple[int, bool] | None = None
         self.batch_total = 0
         self.batch_completed = 0
+        self.last_batch_output_dir: Path | None = None
         self.current_transcript_path: Path | None = None
         self.media_loaded = False
         self.download_started_at = 0.0
@@ -1255,6 +1256,7 @@ class MainWindow(QMainWindow):
         reset_button = confirm.addButton("Reset", QMessageBox.ButtonRole.AcceptRole)
         confirm.addButton(QMessageBox.StandardButton.Cancel)
         confirm.setDefaultButton(QMessageBox.StandardButton.Cancel)
+        _fit_message_box_buttons(confirm)
         confirm.exec()
         return confirm.clickedButton() is reset_button
 
@@ -1438,6 +1440,7 @@ class MainWindow(QMainWindow):
         output_dir = self._choose_output_dir("Select batch output folder")
         if not output_dir:
             return
+        self.last_batch_output_dir = Path(output_dir)
 
         stem_counts = _count_stems([Path(self.batch_items[i]["path"]) for i in pending])
         options_list: list[TranscriptionOptions] = []
@@ -1528,7 +1531,12 @@ class MainWindow(QMainWindow):
         self.progress.setFormat("Done")
         self.progress_label.setText(f"Queue complete: {completed} done, {failed} failed")
         self.append_log(f"Queue complete: {completed} done, {failed} failed")
-        QMessageBox.information(self, "Queue completed", f"Completed: {completed}\nFailed: {failed}")
+        self._show_completion_dialog(
+            "Queue completed",
+            "Queue transcription complete.",
+            f"Completed: {completed}\nFailed: {failed}",
+            self.last_batch_output_dir,
+        )
         self.current_worker = None
         self.current_mode = None
         self.sync_action_controls()
@@ -1763,6 +1771,7 @@ class MainWindow(QMainWindow):
         )
         prompt.addButton(QMessageBox.StandardButton.Cancel)
         prompt.setDefaultButton(download_button)
+        _fit_message_box_buttons(prompt)
         prompt.exec()
 
         clicked = prompt.clickedButton()
@@ -1864,7 +1873,12 @@ class MainWindow(QMainWindow):
         self.progress_label.setText("Transcription complete")
         self.append_log(f"Done: {output_path}")
         self.load_transcript(output_path)
-        QMessageBox.information(self, "Completed", f"Output saved to:\n{output_path}")
+        self._show_completion_dialog(
+            "Completed",
+            "Transcription complete.",
+            f"Output saved to:\n{output_path}",
+            output_path.parent,
+        )
         self.current_worker = None
         self.current_mode = None
         self.sync_action_controls()
@@ -1906,6 +1920,24 @@ class MainWindow(QMainWindow):
 
     def open_outputs(self) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(outputs_dir())))
+
+    def _show_completion_dialog(self, title: str, text: str, informative: str, folder: Path | None) -> None:
+        """Completion modal with a direct "Open output folder" shortcut."""
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle(title)
+        box.setText(text)
+        if informative:
+            box.setInformativeText(informative)
+        open_btn = None
+        if folder is not None:
+            open_btn = box.addButton("Open output folder", QMessageBox.ButtonRole.ActionRole)
+        box.addButton(QMessageBox.StandardButton.Ok)
+        box.setDefaultButton(QMessageBox.StandardButton.Ok)
+        _fit_message_box_buttons(box)
+        box.exec()
+        if open_btn is not None and box.clickedButton() is open_btn:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder)))
 
     def load_media(self, path: Path) -> None:
         self.media_player.stop()
@@ -1996,6 +2028,7 @@ class MainWindow(QMainWindow):
         )
         confirmation.addButton(QMessageBox.StandardButton.Cancel)
         confirmation.setDefaultButton(QMessageBox.StandardButton.Cancel)
+        _fit_message_box_buttons(confirmation)
         confirmation.exec()
 
         if confirmation.clickedButton() != overwrite_button:
@@ -2139,6 +2172,7 @@ class MainWindow(QMainWindow):
         update_btn = box.addButton("Update now", QMessageBox.ButtonRole.AcceptRole)
         box.addButton("Later", QMessageBox.ButtonRole.RejectRole)
         box.setDefaultButton(update_btn)
+        _fit_message_box_buttons(box)
         box.exec()
         if box.clickedButton() is update_btn:
             self.start_engine_update(info)
@@ -2190,6 +2224,7 @@ class MainWindow(QMainWindow):
         )
         security_btn = box.addButton("macOS security & permissions", QMessageBox.ButtonRole.ActionRole)
         box.addButton(QMessageBox.StandardButton.Ok)
+        _fit_message_box_buttons(box)
         box.exec()
         if box.clickedButton() is security_btn:
             self.show_security_help()
@@ -2251,6 +2286,7 @@ class MainWindow(QMainWindow):
         update_btn = box.addButton("Update now", QMessageBox.ButtonRole.AcceptRole)
         box.addButton("Later", QMessageBox.ButtonRole.RejectRole)
         box.setDefaultButton(update_btn)
+        _fit_message_box_buttons(box)
         box.exec()
         if box.clickedButton() is update_btn:
             self.start_model_update(updates)
@@ -2333,6 +2369,7 @@ class MainWindow(QMainWindow):
         )
         open_btn = box.addButton("Open Privacy & Security", QMessageBox.ButtonRole.ActionRole)
         box.addButton(QMessageBox.StandardButton.Close)
+        _fit_message_box_buttons(box)
         box.exec()
         if box.clickedButton() is open_btn:
             QDesktopServices.openUrl(
@@ -2359,6 +2396,7 @@ class MainWindow(QMainWindow):
             "- Le icone in basso a destra: ✓ rimuove i completati (Clear done), il cestino svuota tutta la coda (Clear all).\n"
             "- Retrieve output (o doppio click) riapre un output completato nell'editor.\n\n"
             "Review:\n"
+            "- A fine trascrizione (singola o coda) la finestra di conferma offre Open output folder per aprire direttamente la cartella dei file generati.\n"
             "- Il file sorgente selezionato viene caricato nel player di anteprima.\n"
             "- Quando la trascrizione finisce, il file generato si apre nel Transcript Editor.\n"
             "- Correggi il testo e usa Save changes per salvare sullo stesso file dopo conferma.\n"
@@ -2910,6 +2948,18 @@ class MainWindow(QMainWindow):
                         ),
                     ),
                     block(
+                        "QMessageBox",
+                        f"background: {c['group_bg']};",
+                    ),
+                    block(
+                        "QMessageBox QLabel",
+                        f"color: {c['root_text']};\nbackground: transparent;",
+                    ),
+                    block(
+                        "QMessageBox QPushButton",
+                        "min-width: 72px;",
+                    ),
+                    block(
                         "QFrame#comboPopupFrame",
                         "\n".join(
                             [
@@ -2983,6 +3033,18 @@ class MainWindow(QMainWindow):
                 ]
             )
         )
+
+
+def _fit_message_box_buttons(box: QMessageBox) -> None:
+    """Widen QMessageBox buttons to fit their label.
+
+    With the app stylesheet applied, QMessageBox keeps the style's default
+    button width and clips longer labels (e.g. "Open output folder"), so set a
+    minimum width from the label's font metrics plus the stylesheet padding.
+    """
+    for button in box.buttons():
+        text_width = button.fontMetrics().horizontalAdvance(button.text())
+        button.setMinimumWidth(text_width + 36)
 
 
 def _hex_to_rgba(hex_color: str, alpha: float) -> str:
