@@ -2,6 +2,10 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.8.1 - 2026-07-15
+
+- Fixed queue drag-and-drop removing the dragged row: the drop was accepted as a MoveAction, so Qt deleted the source row after the reorder had already been applied. The drop is now accepted as a copy and the reorder runs after the drag machinery unwinds, so rows are only ever repositioned.
+
 ## 0.8.0 - 2026-07-15
 
 - Added manual queue reordering: drag rows to a new position, use the new up/down arrow buttons next to Remove, or right-click → "Sposta su" / "Sposta giù". Manual reordering replaces any active column sort and is disabled while a transcription is running.

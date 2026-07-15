@@ -547,9 +547,16 @@ class QueueTable(QTableWidget):
         else:
             # Dropped on the empty area below the rows: move to the end.
             target = self.rowCount()
+        # Accept as a copy, NOT a move: when a drop is accepted as MoveAction,
+        # QAbstractItemView.startDrag deletes the dragged row once the drag
+        # returns, on top of the reorder done by the handler — the row vanished.
+        event.setDropAction(Qt.DropAction.CopyAction)
         event.accept()
         if self.row_move_handler is not None:
-            self.row_move_handler(source, target)
+            # Defer the reorder until the drag machinery has fully unwound, so
+            # the table is never mutated in the middle of Qt's own drop handling.
+            handler = self.row_move_handler
+            QTimer.singleShot(0, lambda: handler(source, target))
 
 
 class MainWindow(QMainWindow):
