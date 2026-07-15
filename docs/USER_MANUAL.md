@@ -26,10 +26,10 @@ For a packaged build, open `dist/Transcriber-LP.app`.
 4. Leave source language on `Auto-detect`, or choose a known language.
 5. Keep the original language, or choose `Translate to English`.
 6. Enable `Timestamped output` if you want timecodes in `txt` output and a timestamp CSV sidecar.
-7. Select a file in the queue and click `Transcribe`, or click `Transcribe queue` to process every not-yet-done file in sequence.
+7. Select a file in the queue and click `Transcribe selected` to transcribe only that file, or click `Transcribe queue` to process every not-yet-done file in sequence. (The button reads `Transcribe` while nothing is selected.)
 8. Choose the output folder when prompted.
 
-Use `Stop` to cancel a running transcription.
+Use `Stop` to cancel a running transcription. Use `Reset` to start a new session: after confirmation it empties the queue, unloads the media preview, clears the transcript editor, and resets the progress bar. Output files already saved on disk are not affected.
 
 ## The Queue
 
@@ -37,7 +37,7 @@ Single-file and batch transcription share one **Queue**. Drag and drop (anywhere
 
 When several files are dragged in at once, they are added in chronological order by file date (oldest first).
 
-The queue is a table with three columns: **File**, **Date**, and **Status**. Click any column header to sort the whole queue by that column (click again to reverse the order). Sorting is disabled while a transcription is running. Each row's **File** cell shows a status glyph next to the file name:
+The queue is a table with three columns: **File**, **Date**, and **Status**. Click any column header to sort the whole queue by that column (click again to reverse the order). You can also reorder the queue manually: drag a row to a new position, use the up/down arrow buttons next to `Remove`, or right-click a row and choose **Sposta su** / **Sposta giù**. Manual reordering replaces any active column sort. Both sorting and reordering are disabled while a transcription is running. Each row's **File** cell shows a status glyph next to the file name:
 
 - `○` queued
 - `▶` transcribing
@@ -50,6 +50,7 @@ The queue is a table with three columns: **File**, **Date**, and **Status**. Cli
 Queue controls:
 
 - **Remove** — remove the selected file from the queue.
+- **Move up / Move down** (arrow icons) — move the selected file one position up or down; you can also drag rows to reorder.
 - **Clear done** (✓ icon, bottom-right) — remove all completed (`✓`) files from the queue.
 - **Clear all** (trash icon, bottom-right) — empty the queue.
 - **Retrieve output** — select a completed item (or double-click it) to load its source media in the preview player and open the generated transcript in the editor.

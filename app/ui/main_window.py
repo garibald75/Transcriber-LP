@@ -507,6 +507,51 @@ class XCheckBox(QCheckBox):
         )
 
 
+class QueueTable(QTableWidget):
+    """Queue table whose rows can be reordered by dragging.
+
+    Only drags that start inside the table are treated as row moves; external
+    file drags are ignored so they keep bubbling up to the surrounding
+    DropArea panel, which stays the single drop target for adding files.
+    """
+
+    def __init__(self, rows: int, columns: int, parent=None) -> None:
+        super().__init__(rows, columns, parent)
+        self.row_move_handler = None
+        self.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        self.setDragDropOverwriteMode(False)
+        self.setDropIndicatorShown(True)
+
+    def dragEnterEvent(self, event) -> None:
+        if event.source() is self:
+            super().dragEnterEvent(event)
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event) -> None:
+        if event.source() is self:
+            super().dragMoveEvent(event)
+        else:
+            event.ignore()
+
+    def dropEvent(self, event) -> None:
+        if event.source() is not self:
+            event.ignore()
+            return
+        source = self.currentRow()
+        index = self.indexAt(event.position().toPoint())
+        if index.isValid():
+            target = index.row()
+            if self.dropIndicatorPosition() == QAbstractItemView.DropIndicatorPosition.BelowItem:
+                target += 1
+        else:
+            # Dropped on the empty area below the rows: move to the end.
+            target = self.rowCount()
+        event.accept()
+        if self.row_move_handler is not None:
+            self.row_move_handler(source, target)
+
+
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
@@ -641,8 +686,9 @@ class MainWindow(QMainWindow):
         batch_layout.setContentsMargins(16, 16, 16, 12)
         batch_layout.setSpacing(6)
 
-        self.batch_list = QTableWidget(0, 3)
+        self.batch_list = QueueTable(0, 3)
         self.batch_list.setObjectName("queueTable")
+        self.batch_list.row_move_handler = self.move_queue_row
         self.batch_list.setHorizontalHeaderLabels(["File", "Date", "Status"])
         self.batch_list.setMinimumHeight(64)
         self.batch_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -664,7 +710,8 @@ class MainWindow(QMainWindow):
         self.batch_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.batch_list.customContextMenuRequested.connect(self.show_queue_context_menu)
         self.batch_list.setToolTip(
-            "Loaded media files. Click a column header to sort. Completed files stay here with a ✓ checkmark."
+            "Loaded media files. Click a column header to sort, or drag rows to reorder. "
+            "Completed files stay here with a ✓ checkmark."
         )
         batch_layout.addWidget(self.batch_list, stretch=1)
 
@@ -676,6 +723,26 @@ class MainWindow(QMainWindow):
         self.remove_batch_btn.setEnabled(False)
         self.remove_batch_btn.setToolTip("Remove the selected item from the queue.")
         batch_row_one.addWidget(self.remove_batch_btn)
+
+        self.move_up_btn = QPushButton()
+        self.move_up_btn.setObjectName("iconButton")
+        self.move_up_btn.setProperty("role", "secondary")
+        self.move_up_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowUp))
+        self.move_up_btn.clicked.connect(lambda: self.move_selected_queue_item(-1))
+        self.move_up_btn.setEnabled(False)
+        self.move_up_btn.setFixedWidth(42)
+        self.move_up_btn.setToolTip("Move the selected file up in the queue. You can also drag rows to reorder.")
+        batch_row_one.addWidget(self.move_up_btn)
+
+        self.move_down_btn = QPushButton()
+        self.move_down_btn.setObjectName("iconButton")
+        self.move_down_btn.setProperty("role", "secondary")
+        self.move_down_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
+        self.move_down_btn.clicked.connect(lambda: self.move_selected_queue_item(1))
+        self.move_down_btn.setEnabled(False)
+        self.move_down_btn.setFixedWidth(42)
+        self.move_down_btn.setToolTip("Move the selected file down in the queue. You can also drag rows to reorder.")
+        batch_row_one.addWidget(self.move_down_btn)
 
         batch_row_one.addStretch(1)
 
@@ -809,6 +876,15 @@ class MainWindow(QMainWindow):
         self.open_output_btn.clicked.connect(self.open_outputs)
         self.open_output_btn.setToolTip("Open the folder where transcription outputs are saved.")
         button_row.addWidget(self.open_output_btn)
+
+        self.reset_btn = QPushButton("Reset")
+        self.reset_btn.setProperty("role", "secondary")
+        self.reset_btn.clicked.connect(self.reset_workspace)
+        self.reset_btn.setToolTip(
+            "Start a new session: clear the queue, media preview, transcript editor and progress. "
+            "Output files already saved on disk are not affected."
+        )
+        button_row.addWidget(self.reset_btn)
         left_layout.addLayout(button_row)
 
         self.progress = QProgressBar()
@@ -1022,11 +1098,21 @@ class MainWindow(QMainWindow):
         if not (0 <= row < len(self.batch_items)):
             return
         self._select_queue_row(row)
+        can_reorder = self.current_worker is None and len(self.batch_items) > 1
         menu = QMenu(self.batch_list)
+        move_up_action = menu.addAction("Sposta su")
+        move_up_action.setEnabled(can_reorder and row > 0)
+        move_down_action = menu.addAction("Sposta giù")
+        move_down_action.setEnabled(can_reorder and row < len(self.batch_items) - 1)
+        menu.addSeparator()
         info_action = menu.addAction("Informazioni file")
         chosen = menu.exec(self.batch_list.viewport().mapToGlobal(pos))
         if chosen is info_action:
             self.show_file_info(row)
+        elif chosen is move_up_action:
+            self.move_selected_queue_item(-1)
+        elif chosen is move_down_action:
+            self.move_selected_queue_item(1)
 
     def show_file_info(self, row: int) -> None:
         if not (0 <= row < len(self.batch_items)):
@@ -1053,6 +1139,42 @@ class MainWindow(QMainWindow):
             lines.append(f"Errore: {item['error']}")
         QMessageBox.information(self, "Informazioni file", "\n".join(lines))
 
+    def move_queue_row(self, source: int, target: int) -> None:
+        """Move a queue item from row `source` to insertion index `target`.
+
+        Blocked while any worker runs, because in-flight batch progress relies
+        on stable row <-> batch_items indices.
+        """
+        if self.current_worker is not None:
+            return
+        count = len(self.batch_items)
+        if not (0 <= source < count):
+            return
+        if source < target:
+            target -= 1
+        target = max(0, min(target, count - 1))
+        if target == source:
+            return
+        item = self.batch_items.pop(source)
+        self.batch_items.insert(target, item)
+        # Manual order replaces any active header sort.
+        self.queue_sort = None
+        self.batch_list.horizontalHeader().setSortIndicatorShown(False)
+        self.refresh_batch_list()
+        self._select_queue_row(target)
+        self.append_log(f"Moved in queue: {Path(item['path']).name} → position {target + 1}")
+
+    def move_selected_queue_item(self, delta: int) -> None:
+        row = self.batch_list.currentRow()
+        if not (0 <= row < len(self.batch_items)):
+            return
+        target = row + delta
+        if not (0 <= target < len(self.batch_items)):
+            return
+        # move_queue_row expects an insertion index, so moving down inserts
+        # after the row below.
+        self.move_queue_row(row, target if delta < 0 else target + 1)
+
     def remove_selected_batch_item(self) -> None:
         row = self.batch_list.currentRow()
         if row < 0 or row >= len(self.batch_items):
@@ -1072,6 +1194,62 @@ class MainWindow(QMainWindow):
         self.batch_items.clear()
         self.refresh_batch_list()
         self.append_log("Queue cleared.")
+
+    def reset_workspace(self) -> None:
+        """Return the UI to a fresh-session state: empty queue, no media, no transcript."""
+        if self.current_worker is not None:
+            return
+        has_content = (
+            bool(self.batch_items)
+            or self.current_transcript_path is not None
+            or bool(self.transcript_editor.toPlainText())
+        )
+        if has_content and not self._confirm_reset():
+            self.append_log("Workspace reset cancelled.")
+            return
+
+        self.media_player.stop()
+        self.media_player.setSource(QUrl())
+        self.media_loaded = False
+        self.media_slider.setRange(0, 0)
+        self.media_slider.setValue(0)
+        self.position_label.setText("00:00")
+        self.duration_label.setText("00:00")
+        self.play_pause_btn.setText("Play")
+        self.play_pause_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+
+        self.batch_items.clear()
+        self.queue_sort = None
+        self.batch_list.horizontalHeader().setSortIndicatorShown(False)
+        self.batch_index_map = []
+        self.batch_total = 0
+        self.batch_completed = 0
+        self.current_single_index = None
+        self.selected_file = None
+
+        self.current_transcript_path = None
+        self.transcript_editor.clear()
+        self.transcript_editor.setEnabled(False)
+        self.transcript_label.setText("No transcript loaded")
+
+        self.progress.setRange(0, 1)
+        self.progress.setValue(0)
+        self.progress.setFormat("%p%")
+        self.progress_label.setText("Ready")
+        self.refresh_batch_list()
+        self.append_log("Workspace reset for a new session.")
+
+    def _confirm_reset(self) -> bool:
+        confirm = QMessageBox(self)
+        confirm.setIcon(QMessageBox.Icon.Question)
+        confirm.setWindowTitle("Reset workspace?")
+        confirm.setText("Reset clears the queue, the media preview and the transcript editor.")
+        confirm.setInformativeText("Output files already saved on disk are not affected.\n\nContinue?")
+        reset_button = confirm.addButton("Reset", QMessageBox.ButtonRole.AcceptRole)
+        confirm.addButton(QMessageBox.StandardButton.Cancel)
+        confirm.setDefaultButton(QMessageBox.StandardButton.Cancel)
+        confirm.exec()
+        return confirm.clickedButton() is reset_button
 
     def refresh_batch_list(self) -> None:
         current_row = self.batch_list.currentRow()
@@ -1193,6 +1371,12 @@ class MainWindow(QMainWindow):
         )
 
         self.browse_btn.setEnabled(not is_busy)
+        self.transcribe_btn.setText("Transcribe selected" if has_selection else "Transcribe")
+        self.transcribe_btn.setToolTip(
+            "Transcribe only the file selected in the queue."
+            if has_selection
+            else "Start the transcription process for the selected file."
+        )
         self.transcribe_btn.setEnabled(has_file and has_model and not is_busy)
         self.stop_btn.setEnabled(is_transcribing)
         self.open_output_btn.setEnabled(not is_busy)
@@ -1204,6 +1388,11 @@ class MainWindow(QMainWindow):
         self.target_language_combo.setEnabled(not is_busy)
         self.save_timestamps_checkbox.setEnabled(not is_busy)
         self.remove_batch_btn.setEnabled(has_selection and not is_busy)
+        can_reorder = has_selection and len(self.batch_items) > 1 and not is_busy
+        self.move_up_btn.setEnabled(can_reorder and row > 0)
+        self.move_down_btn.setEnabled(can_reorder and row < len(self.batch_items) - 1)
+        self.batch_list.setDragEnabled(can_reorder)
+        self.reset_btn.setEnabled(not is_busy)
         self.clear_done_btn.setEnabled(has_done and not is_busy)
         self.clear_batch_btn.setEnabled(has_items and not is_busy)
         self.batch_transcribe_btn.setEnabled(has_pending and has_model and not is_busy)
@@ -2152,9 +2341,11 @@ class MainWindow(QMainWindow):
             "4) Opzionalmente imposta la lingua sorgente o lascia Auto-detect per la rilevazione automatica.\n"
             "5) Scegli se mantenere la lingua originale o tradurre in inglese.\n"
             "6) Abilita Timestamped output se vuoi timecode nel TXT e un CSV con i timestamp.\n"
-            "7) Clicca Transcribe per il file selezionato; usa Stop per annullare la trascrizione in corso.\n\n"
+            "7) Clicca Transcribe selected per trascrivere solo il file selezionato nella coda; usa Stop per annullare la trascrizione in corso.\n"
+            "8) Usa Reset per azzerare coda, anteprima, editor e progresso e iniziare una nuova sessione: gli output gia salvati su disco non vengono toccati.\n\n"
             "Queue:\n"
             "- La coda e una tabella con le colonne File, Date e Status: clicca un'intestazione per ordinare la coda (di nuovo per invertire). L'ordinamento e disattivato durante una trascrizione.\n"
+            "- Riordina manualmente la coda trascinando le righe, con i pulsanti freccia su/giu accanto a Remove, o dal menu contestuale (Sposta su / Sposta giu). Il riordino manuale sostituisce l'ordinamento per colonna ed e disattivato durante una trascrizione.\n"
             "- I file restano nella coda: ▶ in corso, ✓ completato, ✗ fallito. Non spariscono dopo la trascrizione.\n"
             "- Usa Transcribe queue per trascrivere in sequenza tutti i file non ancora completati nello stesso output folder.\n"
             "- La barra mostra l'avanzamento (X/Y) e quali file sono stati fatti.\n"

@@ -2,6 +2,12 @@
 
 Transcriber-LP follows semantic versioning. The first tracked baseline starts at `0.1.0`.
 
+## 0.8.0 - 2026-07-15
+
+- Added manual queue reordering: drag rows to a new position, use the new up/down arrow buttons next to Remove, or right-click → "Sposta su" / "Sposta giù". Manual reordering replaces any active column sort and is disabled while a transcription is running.
+- Renamed the single-file button to "Transcribe selected" whenever a queue row is selected, to make clear it transcribes only that file while "Transcribe queue" still processes every pending file.
+- Added a "Reset" button that starts a new session: it empties the queue, unloads the media preview, clears the transcript editor and resets the progress bar (after confirmation; output files already saved on disk are untouched).
+
 ## 0.7.2 - 2026-06-24
 
 - Removed the standalone file-path card under the "Add or Drop files here" button and gave the recovered space to the Queue. The selected file's full path is still available via the row tooltip (hover) and a new right-click → "Informazioni file" context menu on the queue, which shows name, full path, status, date, size, and (when present) output name and error.

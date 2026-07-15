@@ -36,9 +36,11 @@ The repository intentionally does not commit runtime binaries, model weights, vi
 - visible `Add or Drop files here` button that adds one or more files at once
 - unified queue: every loaded file (drag & drop or the `Add or Drop files here` picker) joins one queue and stays there after transcribing
 - sortable queue table with `File`, `Date`, and `Status` columns — click a column header to sort the queue
+- manual queue reordering: drag rows, up/down arrow buttons, or right-click → `Sposta su` / `Sposta giù`
 - per-file status glyphs in the queue — `○` queued, `▶` running, `✓` done, `✗` failed — so completed files keep a checkmark instead of disappearing
 - queue progress shown as `X / Y` with a per-file status line, plus `Clear done` and `Clear all` queue controls
-- `Transcribe queue` processes every not-yet-done file sequentially and skips files already completed
+- `Transcribe selected` transcribes only the file selected in the queue; `Transcribe queue` processes every not-yet-done file sequentially and skips files already completed
+- `Reset` button to start a new session: empties the queue and clears the media preview, transcript editor, and progress (saved outputs are untouched)
 - output formats: `txt`, `srt`, `vtt`
 - optional timestamped TXT output with CSV timing sidecar export
 - source language selection or auto-detect

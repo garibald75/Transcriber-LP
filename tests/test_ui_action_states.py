@@ -90,6 +90,99 @@ class UiActionStateTests(unittest.TestCase):
         self.assertEqual(self.window.model_download_progress.value(), 50)
         self.assertIn("Downloading Base", self.window.model_download_status_label.text())
 
+    def _load_queue(self, count):
+        self.window.batch_items = [
+            {"path": Path(f"/tmp/file{i}.mp4"), "status": "queued", "output": None, "error": None}
+            for i in range(count)
+        ]
+        self.window.refresh_batch_list()
+
+    def _queue_names(self):
+        return [Path(item["path"]).name for item in self.window.batch_items]
+
+    def test_transcribe_button_label_follows_selection(self):
+        self.assertEqual(self.window.transcribe_btn.text(), "Transcribe")
+
+        self._load_queue(2)
+        self.assertEqual(self.window.transcribe_btn.text(), "Transcribe selected")
+
+        self.window.clear_batch_queue()
+        self.assertEqual(self.window.transcribe_btn.text(), "Transcribe")
+
+    def test_queue_reorder_moves_items_and_selection(self):
+        self._load_queue(3)
+        self.window.batch_list.setCurrentCell(0, 0)
+        self.window.sync_action_controls()
+        self.assertFalse(self.window.move_up_btn.isEnabled())
+        self.assertTrue(self.window.move_down_btn.isEnabled())
+
+        self.window.move_selected_queue_item(1)
+        self.assertEqual(self._queue_names(), ["file1.mp4", "file0.mp4", "file2.mp4"])
+        self.assertEqual(self.window.batch_list.currentRow(), 1)
+        self.assertTrue(self.window.move_up_btn.isEnabled())
+
+        self.window.move_selected_queue_item(-1)
+        self.assertEqual(self._queue_names(), ["file0.mp4", "file1.mp4", "file2.mp4"])
+        self.assertEqual(self.window.batch_list.currentRow(), 0)
+
+    def test_queue_drop_reorder_uses_insertion_index(self):
+        self._load_queue(3)
+        # Drop row 0 at the end of the table (insertion index == row count).
+        self.window.batch_list.setCurrentCell(0, 0)
+        self.window.move_queue_row(0, 3)
+        self.assertEqual(self._queue_names(), ["file1.mp4", "file2.mp4", "file0.mp4"])
+
+    def test_queue_reorder_clears_header_sort(self):
+        self._load_queue(2)
+        self.window.queue_sort = (0, False)
+        self.window.batch_list.setCurrentCell(0, 0)
+        self.window.move_selected_queue_item(1)
+        self.assertIsNone(self.window.queue_sort)
+
+    def test_queue_reorder_blocked_while_busy(self):
+        self._load_queue(2)
+        self.window.batch_list.setCurrentCell(0, 0)
+        self.window.current_worker = object()
+        self.window.current_mode = "batch"
+        self.window.sync_action_controls()
+        self.assertFalse(self.window.move_up_btn.isEnabled())
+        self.assertFalse(self.window.move_down_btn.isEnabled())
+
+        self.window.move_selected_queue_item(1)
+        self.assertEqual(self._queue_names(), ["file0.mp4", "file1.mp4"])
+
+    def test_reset_workspace_clears_state(self):
+        self._load_queue(2)
+        self.window._confirm_reset = lambda: True
+        self.window.selected_file = Path("/tmp/file0.mp4")
+        self.window.current_transcript_path = Path("/tmp/out.txt")
+        self.window.transcript_editor.setEnabled(True)
+        self.window.transcript_editor.setPlainText("some transcript")
+        self.window.transcript_label.setText("/tmp/out.txt")
+
+        self.window.reset_workspace()
+
+        self.assertEqual(self.window.batch_items, [])
+        self.assertEqual(self.window.batch_list.rowCount(), 0)
+        self.assertIsNone(self.window.selected_file)
+        self.assertIsNone(self.window.current_transcript_path)
+        self.assertEqual(self.window.transcript_editor.toPlainText(), "")
+        self.assertFalse(self.window.transcript_editor.isEnabled())
+        self.assertEqual(self.window.transcript_label.text(), "No transcript loaded")
+        self.assertEqual(self.window.progress_label.text(), "Ready")
+        self.assertEqual(self.window.transcribe_btn.text(), "Transcribe")
+
+    def test_reset_workspace_respects_cancel_and_busy(self):
+        self._load_queue(1)
+        self.window._confirm_reset = lambda: False
+        self.window.reset_workspace()
+        self.assertEqual(len(self.window.batch_items), 1)
+
+        self.window._confirm_reset = lambda: True
+        self.window.current_worker = object()
+        self.window.reset_workspace()
+        self.assertEqual(len(self.window.batch_items), 1)
+
     def test_missing_model_prompt_can_start_default_download(self):
         actions = []
         self.window.model_combo.clear()
